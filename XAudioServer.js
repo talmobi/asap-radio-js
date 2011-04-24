@@ -272,14 +272,15 @@ function upsampler(buffer1, buffer2, countDown) {
 		//MONO:
 		while (countDown < resamplingRate) {
 			buffer2[countDown] = buffer1[countDown] = audioContextSampleBuffer[startPosition];
-			if (startPosition == webAudioMaxBufferSize) {
-				startPosition = 0;
-			}
 			startPositionOverflow += resampleAmount;
 			if (startPositionOverflow >= 1) {
 				--startPositionOverflow;
 				++startPosition;
+				if (startPosition == webAudioMaxBufferSize) {
+					startPosition = 0;
+				}
 			}
+			
 		}
 	}
 	else {
@@ -287,13 +288,13 @@ function upsampler(buffer1, buffer2, countDown) {
 		while (countDown < resamplingRate) {
 			buffer1[countDown] = audioContextSampleBuffer[startPosition];
 			buffer2[countDown++] = audioContextSampleBuffer[startPosition + 1];
-			if (startPosition == webAudioMaxBufferSize) {
-				startPosition = 0;
-			}
 			startPositionOverflow += resampleAmount;
 			if (startPositionOverflow >= 1) {
 				--startPositionOverflow;
 				startPosition += 2;
+				if (startPosition == webAudioMaxBufferSize) {
+					startPosition = 0;
+				}
 			}
 		}
 	}
