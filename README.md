@@ -10,15 +10,13 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 	<dt>new XAudioServer(int channels, int sampleRate, int bufferLow, int bufferHigh, function underRunCallback, defaultNeutralLevel);</dt>
 		<dd>Make sure only one instance of XAudioServer is running at any time.</dd>
 		<dd>bufferLow MUST be less than bufferHigh.</dd>
-		<dd>
-			<dl>
-				<dt>Array underRunCallback (int samplesRequested)</dt>
-					<dd>Arguments: Passed the number of samples that are needed to replenish the internal audio buffer back to bufferLow.</dd>
-					<dd>Functionality: JS developer set callback that can pass back any number of samples to replenish the audio buffer with.</dd>
-					<dd>Return: Array of samples to be passed into the underlying audio buffer. MUST be divisible by number of channels used (Whole frames required.).</dd>
-					<dd>The return array length DOES NOT NEED to be of length samplesRequested.</dd>
-			</dl>
-		</dd>
+		<dl>
+			<dt>Array underRunCallback (int samplesRequested)</dt>
+				<dd>Arguments: Passed the number of samples that are needed to replenish the internal audio buffer back to bufferLow.</dd>
+				<dd>Functionality: JS developer set callback that can pass back any number of samples to replenish the audio buffer with.</dd>
+				<dd>Return: Array of samples to be passed into the underlying audio buffer. MUST be divisible by number of channels used (Whole frames required.).</dd>
+				<dd>The return array length DOES NOT NEED to be of length samplesRequested.</dd>
+		</dl>
 </dl>
 <h3>Function Reference:</h3>
 <dl>
