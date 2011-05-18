@@ -5,8 +5,6 @@ Since Firefox 4.0 only had the Mozilla Audio Data API and experimental (at the t
 there instantly was a need for abstracting the two APIs. This simple JavaScript library abstracts the push-for-audio API of Mozilla Audio
 and the passive callback API of Web Audio and introduces an abstraction layers that provides a push-for-audio and a callback API in one.</p>
 <br>
-<p>The underlying audio buffer for mozilla audio is maintained by the browser itself, while for web audio a JavaScript-side ring-buffer is implemented for the audio buffer.</p>
-<br>
 <h3>How To Initialize:</h3>
 <dl>
 	<dt>new XAudioServer(int channels, int sampleRate, int bufferLow, int bufferHigh, function underRunCallback, defaultNeutralLevel);</dt>
