@@ -13,8 +13,8 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 		<dd>
 			<h4>Array underRunCallback (int samplesRequested)</h4>
 			<blockquote>
-				Arguments: Passed the number of samples that are needed to replenish the internal audio buffer back to bufferLow.<br>
-				Functionality: JS developer set callback that can pass back any number of samples to replenish the audio buffer with.<br>
+				Arguments: Passed the number of samples that are needed to replenish the internal audio buffer back to bufferLow.<br><br>
+				Functionality: JS developer set callback that can pass back any number of samples to replenish the audio buffer with.<br><br>
 				Return: Array of samples to be passed into the underlying audio buffer. MUST be divisible by number of channels used (Whole frames required.). The return array length DOES NOT NEED to be of length samplesRequested.
 			</blockquote>
 		</dd>
