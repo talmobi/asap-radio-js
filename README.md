@@ -7,7 +7,7 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 <br>
 <h3>How To Initialize:</h3>
 <dl>
-	<dt>new XAudioServer(int channels, int sampleRate, int bufferLow, int bufferHigh, function underRunCallback, defaultNeutralLevel);</dt>
+	<dt>new XAudioServer(int channels, int sampleRate, int bufferLow, int bufferHigh, function underRunCallback, int defaultNeutralLevel);</dt>
 		<dd>Make sure only one instance of XAudioServer is running at any time.</dd>
 		<dd>bufferLow MUST be less than bufferHigh.</dd>
 		<dd>
@@ -18,6 +18,7 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 				Return: Array of samples to be passed into the underlying audio buffer. MUST be divisible by number of channels used (Whole frames required.). The return array length DOES NOT NEED to be of length samplesRequested.
 			</blockquote>
 		</dd>
+		<dd>defaultNeutralLevel is the default silence waveform position (0 is the true natural default that you can override here.).</dd>
 </dl>
 <h3>Function Reference:</h3>
 <dl>
