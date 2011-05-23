@@ -159,7 +159,6 @@ XAudioServer.prototype.initializeAudio = function () {
 			this.samplesAlreadyWritten += this.audioHandle.mozWriteAudio(emptySampleFrame);
 		}
 		this.samplesAlreadyWritten += prebufferAmount + this.audioHandle.mozWriteAudio(getFloat32(webAudioMinBufferSize));
-		//alert("Samples buffered on initialization: " + this.samplesAlreadyWritten + "\r\nPrebuffer: " + prebufferAmount);
 		webAudioMinBufferSize += prebufferAmount << 1;
 		this.audioType = 0;
 	}
