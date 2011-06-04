@@ -7,7 +7,7 @@ package {
         public var sound:Sound = null;
 		public var bufferingTotal:int = 50000;
         public var buffer:Array = new Array(50000);
-		public var audioSegment = 4096;
+		public var audioSegment:int = 4096;
 		public var resampleBuffer:Array = new Array(4096);
 		public var sampleRate:Number = 0;
 		public var defaultNeutralLevel:Number = 0;
