@@ -7,7 +7,8 @@ package {
         public var sound:Sound = null;
 		public var bufferingTotal:int = 50000;
         public var buffer:Array = new Array(50000);
-		public var resampleBuffer:Array = new Array(16384);
+		public var audioSegment = 4096;
+		public var resampleBuffer:Array = new Array(4096);
 		public var sampleRate:Number = 0;
 		public var defaultNeutralLevel:Number = 0;
 		public var startPositionOverflow:Number = 0;
@@ -54,7 +55,7 @@ package {
 				var sampleBase1:Number = 0;
 				var sampleBase2:Number = 0;
 				var sampleIndice:Number = 1;
-				for (this.samplesFound = 0; this.samplesFound < 16384 && this.startPosition != this.endPosition;) {
+				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
 					sampleBase1 = this.buffer[this.startPosition++];
 					sampleBase2 = this.buffer[this.startPosition++];
 					if (this.startPosition == this.endPosition) {
@@ -94,7 +95,7 @@ package {
 			}
 			else if (this.sampleRate < 44100) {
 				//Upsampler:
-				for (this.samplesFound = 0; this.samplesFound < 16384 && this.startPosition != this.endPosition;) {
+				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
 					this.resampleBuffer[this.samplesFound++] = this.buffer[this.startPosition];
 					this.resampleBuffer[this.samplesFound++] = this.buffer[this.startPosition + 1];
 					this.startPositionOverflow += this.resampleAmount;
@@ -109,7 +110,7 @@ package {
 			}
 			else {
 				//No resampling:
-				for (this.samplesFound = 0; this.samplesFound < 16384 && this.startPosition != this.endPosition;) {
+				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
 					this.resampleBuffer[this.samplesFound++] = this.buffer[this.startPosition++];
 					this.resampleBuffer[this.samplesFound++] = this.buffer[this.startPosition++];
 					if (this.startPosition == this.bufferingTotal) {
