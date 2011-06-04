@@ -7,8 +7,8 @@ package {
         public var sound:Sound = null;
 		public var bufferingTotal:int = 50000;
         public var buffer:Array = new Array(50000);
-		public var audioSegment:int = 5500;
-		public var resampleBuffer:Array = new Array(5500);
+		public var audioSegment:int = 5000;
+		public var resampleBuffer:Array = new Array(5000);
 		public var sampleRate:Number = 0;
 		public var defaultNeutralLevel:Number = 0;
 		public var startPositionOverflow:Number = 0;
@@ -171,18 +171,33 @@ package {
 		}
 		//Flash Audio Refill Callback
         public function soundCallback(e:SampleDataEvent):void {
-			var index:int = 0;
 			if (this.startPosition != this.endPosition) {
 				this.resample();
-				while (index < this.samplesFound) {
-					e.data.writeFloat(this.resampleBuffer[index++]);
-					e.data.writeFloat(this.resampleBuffer[index++]);
+				if (this.samplesFound >= 4096) {
+					//We have enough samples for normal playback:
+					var index:int = 0;
+					while (index < this.samplesFound) {
+						e.data.writeFloat(this.resampleBuffer[index++]);
+						e.data.writeFloat(this.resampleBuffer[index++]);
+					}
+				}
+				else {
+					//Slow down the audible frequency to keep it gapless:
+					var indexFloat:Number = 0;
+					var underrunFraction:Number = this.samplesFound / 4096;
+					while (indexFloat < this.samplesFound) {
+						e.data.writeFloat(this.resampleBuffer[int(indexFloat)]);
+						e.data.writeFloat(this.resampleBuffer[int(indexFloat) + 1]);
+						indexFloat += underrunFraction;
+					}
 				}
 			}
-			while (index < 4096) {
-				e.data.writeFloat(this.defaultNeutralLevel);
-				e.data.writeFloat(this.defaultNeutralLevel);
-				index += 2;
+			else {
+				//Write silence if no samples are found:
+				for (var indexSilence:int = 0; indexSilence < 2048; indexSilence++) {
+					e.data.writeFloat(this.defaultNeutralLevel);
+					e.data.writeFloat(this.defaultNeutralLevel);
+				}
 			}
         }
     }
