@@ -7,8 +7,8 @@ package {
         public var sound:Sound = null;
 		public var bufferingTotal:int = 50000;
         public var buffer:Array = new Array(50000);
-		public var audioSegment:int = 4096;
-		public var resampleBuffer:Array = new Array(4096);
+		public var audioSegment:int = 5500;
+		public var resampleBuffer:Array = new Array(5500);
 		public var sampleRate:Number = 0;
 		public var defaultNeutralLevel:Number = 0;
 		public var startPositionOverflow:Number = 0;
@@ -54,25 +54,27 @@ package {
 				//Downsampler:
 				var sampleBase1:Number = 0;
 				var sampleBase2:Number = 0;
-				var sampleIndice:Number = 1;
+				var sampleIndice:int = 1;
 				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
 					sampleBase1 = this.buffer[this.startPosition++];
 					sampleBase2 = this.buffer[this.startPosition++];
 					if (this.startPosition == this.endPosition) {
-						break;
+						//Resampling must be clipped here:
+						this.resampleBuffer[this.samplesFound++] = sampleBase1;
+						this.resampleBuffer[this.samplesFound++] = sampleBase2;
+						return;
 					}
 					if (this.startPosition == this.bufferingTotal) {
 						this.startPosition = 0;
 					}
-					for (sampleIndice = 1; sampleIndice < this.resampleAmountFloor; sampleIndice++) {
+					for (sampleIndice = 1; sampleIndice < this.resampleAmountFloor;) {
+						++sampleIndice;
 						sampleBase1 += this.buffer[this.startPosition++];
 						sampleBase2 += this.buffer[this.startPosition++];
 						if (this.startPosition == this.endPosition) {
-							//Revert the position counter:
-							this.startPosition -= sampleIndice << 1;
-							if (this.startPosition < 0) {
-								this.startPosition += this.bufferingTotal;
-							}
+							//Resampling must be clipped here:
+							this.resampleBuffer[this.samplesFound++] = sampleBase1 / sampleIndice;
+							this.resampleBuffer[this.samplesFound++] = sampleBase2 / sampleIndice;
 							return;
 						}
 						if (this.startPosition == this.bufferingTotal) {
