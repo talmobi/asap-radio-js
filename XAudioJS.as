@@ -7,8 +7,10 @@ package {
         public var sound:Sound = null;
 		public var bufferingTotal:int = 50000;
         public var buffer:Array = new Array(50000);
-		public var audioSegment:int = 5000;
-		public var resampleBuffer:Array = new Array(5000);
+		public var audioSegment:int = 2500;
+		public var resampleChannel1Buffer:Array = new Array(2500);
+		public var resampleChannel2Buffer:Array = new Array(2500);
+		public var channels:int = 0;
 		public var sampleRate:Number = 0;
 		public var defaultNeutralLevel:Number = 0;
 		public var startPositionOverflow:Number = 0;
@@ -25,8 +27,9 @@ package {
 			ExternalInterface.addCallback('initialize',  initialize);
         }
 		//Initialization function for the flash backend of XAudioJS:
-        public function initialize(sampleRate:Number, bufferingTotal:Number, defaultNeutralLevel:Number):void {
+        public function initialize(channels:Number, sampleRate:Number, bufferingTotal:Number, defaultNeutralLevel:Number):void {
 			//Initialize the new settings:
+			this.channels = (channels == 2) ? 2 : 1;
 			this.sampleRate = sampleRate;
 			this.bufferingTotal = int(bufferingTotal);
 			this.buffer = new Array(this.bufferingTotal);
@@ -48,8 +51,8 @@ package {
 			this.resampleAmountRemainder = this.resampleAmount - Number(this.resampleAmountFloor);
 			this.startPositionOverflow = 0;
 		}
-		//Audio resampling:
-		public function resample():void {
+		//Stereo Audio Resampling:
+		public function resampleStereo():void {
 			if (this.sampleRate > 44100) {
 				//Downsampler:
 				var sampleBase1:Number = 0;
@@ -60,8 +63,8 @@ package {
 					sampleBase2 = this.buffer[this.startPosition++];
 					if (this.startPosition == this.endPosition) {
 						//Resampling must be clipped here:
-						this.resampleBuffer[this.samplesFound++] = sampleBase1;
-						this.resampleBuffer[this.samplesFound++] = sampleBase2;
+						this.resampleChannel1Buffer[this.samplesFound] = sampleBase1;
+						this.resampleChannel2Buffer[this.samplesFound++] = sampleBase2;
 						return;
 					}
 					if (this.startPosition == this.bufferingTotal) {
@@ -73,8 +76,8 @@ package {
 						sampleBase2 += this.buffer[this.startPosition++];
 						if (this.startPosition == this.endPosition) {
 							//Resampling must be clipped here:
-							this.resampleBuffer[this.samplesFound++] = sampleBase1 / sampleIndice;
-							this.resampleBuffer[this.samplesFound++] = sampleBase2 / sampleIndice;
+							this.resampleChannel1Buffer[this.samplesFound] = sampleBase1 / sampleIndice;
+							this.resampleChannel2Buffer[this.samplesFound++] = sampleBase2 / sampleIndice;
 							return;
 						}
 						if (this.startPosition == this.bufferingTotal) {
@@ -91,15 +94,15 @@ package {
 						}
 						sampleIndice++;
 					}
-					this.resampleBuffer[this.samplesFound++] = sampleBase1 / sampleIndice;
-					this.resampleBuffer[this.samplesFound++] = sampleBase2 / sampleIndice;
+					this.resampleChannel1Buffer[this.samplesFound] = sampleBase1 / sampleIndice;
+					this.resampleChannel2Buffer[this.samplesFound++] = sampleBase2 / sampleIndice;
 				}
 			}
 			else if (this.sampleRate < 44100) {
 				//Upsampler:
 				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
-					this.resampleBuffer[this.samplesFound++] = this.buffer[this.startPosition];
-					this.resampleBuffer[this.samplesFound++] = this.buffer[this.startPosition + 1];
+					this.resampleChannel1Buffer[this.samplesFound] = this.buffer[this.startPosition];
+					this.resampleChannel2Buffer[this.samplesFound++] = this.buffer[this.startPosition + 1];
 					this.startPositionOverflow += this.resampleAmount;
 					if (this.startPositionOverflow >= 1) {
 						--this.startPositionOverflow;
@@ -113,8 +116,72 @@ package {
 			else {
 				//No resampling:
 				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
-					this.resampleBuffer[this.samplesFound++] = this.buffer[this.startPosition++];
-					this.resampleBuffer[this.samplesFound++] = this.buffer[this.startPosition++];
+					this.resampleChannel1Buffer[this.samplesFound] = this.buffer[this.startPosition++];
+					this.resampleChannel2Buffer[this.samplesFound++] = this.buffer[this.startPosition++];
+					if (this.startPosition == this.bufferingTotal) {
+						this.startPosition = 0;
+					}
+				}
+			}
+		}
+		//Mono Audio Resampling:
+		public function resampleMono():void {
+			if (this.sampleRate > 44100) {
+				//Downsampler:
+				var sampleBase1:Number = 0;
+				var sampleIndice:int = 1;
+				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
+					sampleBase1 = this.buffer[this.startPosition++];
+					if (this.startPosition == this.endPosition) {
+						//Resampling must be clipped here:
+						this.resampleChannel1Buffer[this.samplesFound++] = sampleBase1;
+						return;
+					}
+					if (this.startPosition == this.bufferingTotal) {
+						this.startPosition = 0;
+					}
+					for (sampleIndice = 1; sampleIndice < this.resampleAmountFloor;) {
+						++sampleIndice;
+						sampleBase1 += this.buffer[this.startPosition++];
+						if (this.startPosition == this.endPosition) {
+							//Resampling must be clipped here:
+							this.resampleChannel1Buffer[this.samplesFound++] = sampleBase1 / sampleIndice;
+							return;
+						}
+						if (this.startPosition == this.bufferingTotal) {
+							this.startPosition = 0;
+						}
+					}
+					this.startPositionOverflow += this.resampleAmountRemainder;
+					if (this.startPositionOverflow >= 1) {
+						this.startPositionOverflow--;
+						sampleBase1 += this.buffer[this.startPosition++];
+						if (this.startPosition == this.bufferingTotal) {
+							this.startPosition = 0;
+						}
+						sampleIndice++;
+					}
+					this.resampleChannel1Buffer[this.samplesFound++] = sampleBase1 / sampleIndice;
+				}
+			}
+			else if (this.sampleRate < 44100) {
+				//Upsampler:
+				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
+					this.resampleChannel1Buffer[this.samplesFound++] = this.buffer[this.startPosition];
+					this.startPositionOverflow += this.resampleAmount;
+					if (this.startPositionOverflow >= 1) {
+						--this.startPositionOverflow;
+						this.startPosition++;
+						if (this.startPosition == this.bufferingTotal) {
+							this.startPosition = 0;
+						}
+					}
+				}
+			}
+			else {
+				//No resampling:
+				for (this.samplesFound = 0; this.samplesFound < this.audioSegment && this.startPosition != this.endPosition;) {
+					this.resampleChannel1Buffer[this.samplesFound++] = this.buffer[this.startPosition++];
 					if (this.startPosition == this.bufferingTotal) {
 						this.startPosition = 0;
 					}
@@ -124,28 +191,45 @@ package {
 		//Insert the audio samples into the ring buffer while returning the current samples left:
         public function writeAudio(bufferPassed:String):Number {
 			this.addSamples(bufferPassed.split(" "));
-			this.checkForSound();
 			return this.remainingSamples();
         }
 		//Insert the audio samples into the ring buffer without returning the current samples left:
 		public function writeAudioNoReturn(bufferPassed:String):void {
 			this.addSamples(bufferPassed.split(" "));
-			this.checkForSound();
         }
 		//Add samples into the audio ring buffer:
 		public function addSamples(bufferPassed:Array):void {
-			var length:int = bufferPassed.length;
-			if ((length % 2) == 0) {	//Outsmart bad programmers from messing us up. :/
-				for (var index:int = 0; index < length;) {
-					this.buffer[this.endPosition++] = (Number(bufferPassed[index++]) / 0x8000);
-					this.buffer[this.endPosition++] = (Number(bufferPassed[index++]) / 0x8000);
-					if (this.endPosition == this.bufferingTotal) {
-						this.endPosition = 0;
+			if (this.channels > 0) {					//Initialization check.
+				var length:int = bufferPassed.length;
+				if ((length % this.channels) == 0) {	//Outsmart bad programmers from messing us up. :/
+					var index:int = 0;
+					if (this.channels == 2) {
+						while (index < length) {
+							this.buffer[this.endPosition++] = (Number(bufferPassed[index++]) / 0x1869F);
+							this.buffer[this.endPosition++] = (Number(bufferPassed[index++]) / 0x1869F);
+							if (this.endPosition == this.bufferingTotal) {
+								this.endPosition = 0;
+							}
+							if (this.endPosition == this.startPosition) {
+								this.startPosition += 2;
+								if (this.startPosition == this.bufferingTotal) {
+									this.startPosition = 0;
+								}
+							}
+						}
 					}
-					if (this.endPosition == this.startPosition) {
-						this.startPosition += 2;
-						if (this.startPosition == this.bufferingTotal) {
-							this.startPosition = 0;
+					else {
+						while (index < length) {
+							this.buffer[this.endPosition++] = (Number(bufferPassed[index++]) / 0x1869F);
+							if (this.endPosition == this.bufferingTotal) {
+								this.endPosition = 0;
+							}
+							if (this.endPosition == this.startPosition) {
+								this.startPosition++;
+								if (this.startPosition == this.bufferingTotal) {
+									this.startPosition = 0;
+								}
+							}
 						}
 					}
 				}
@@ -171,33 +255,29 @@ package {
 		}
 		//Flash Audio Refill Callback
         public function soundCallback(e:SampleDataEvent):void {
+			var index:int = 0;
 			if (this.startPosition != this.endPosition) {
-				this.resample();
-				if (this.samplesFound >= 4096) {
-					//We have enough samples for normal playback:
-					var index:int = 0;
+				if (this.channels == 2) {
+					//Stereo:
+					this.resampleStereo();
 					while (index < this.samplesFound) {
-						e.data.writeFloat(this.resampleBuffer[index++]);
-						e.data.writeFloat(this.resampleBuffer[index++]);
+						e.data.writeFloat(this.resampleChannel1Buffer[index]);
+						e.data.writeFloat(this.resampleChannel2Buffer[index++]);
 					}
 				}
 				else {
-					//Slow down the audible frequency to keep it gapless:
-					var indexFloat:Number = 0;
-					var underrunFraction:Number = this.samplesFound / 4096;
-					while (indexFloat < this.samplesFound) {
-						e.data.writeFloat(this.resampleBuffer[int(indexFloat)]);
-						e.data.writeFloat(this.resampleBuffer[int(indexFloat) + 1]);
-						indexFloat += underrunFraction;
+					//Mono:
+					this.resampleMono();
+					while (index < this.samplesFound) {
+						e.data.writeFloat(this.resampleChannel1Buffer[index]);
+						e.data.writeFloat(this.resampleChannel1Buffer[index++]);
 					}
 				}
 			}
-			else {
-				//Write silence if no samples are found:
-				for (var indexSilence:int = 0; indexSilence < 2048; indexSilence++) {
-					e.data.writeFloat(this.defaultNeutralLevel);
-					e.data.writeFloat(this.defaultNeutralLevel);
-				}
+			//Write silence if no samples are found:
+			while (++index <= 2048) {
+				e.data.writeFloat(this.defaultNeutralLevel);
+				e.data.writeFloat(this.defaultNeutralLevel);
 			}
         }
     }
