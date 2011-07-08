@@ -30,10 +30,9 @@ package {
         public function initialize(channels:Number, sampleRate:Number, bufferingTotal:Number, defaultNeutralLevel:Number):void {
 			//Initialize the new settings:
 			this.channels = (channels == 2) ? 2 : 1;
-			this.sampleRate = sampleRate;
-			this.bufferingTotal = int(bufferingTotal);
-			this.buffer = new Array(this.bufferingTotal);
-			this.defaultNeutralLevel = defaultNeutralLevel;
+			this.sampleRate = (sampleRate > 0) ? sampleRate : 44100;
+			this.bufferingTotal = Math.max(int(bufferingTotal - (bufferingTotal % this.channels)), this.channels, Math.ceil(this.sampleRate / 44100 * this.audioSegment));
+			this.defaultNeutralLevel = Math.min(Math.max(defaultNeutralLevel, -1), 1);
 			this.resetBuffer();
 			this.initializeResampling();
 			this.checkForSound();
@@ -42,6 +41,7 @@ package {
 		public function resetBuffer():void {
 			this.startPosition = 0;
 			this.endPosition = 0;
+			this.buffer = new Array(this.bufferingTotal);
 		}
 		//Initialize some variables for the resampler:
 		public function initializeResampling():void {
@@ -205,8 +205,8 @@ package {
 					var index:int = 0;
 					if (this.channels == 2) {
 						while (index < length) {
-							this.buffer[this.endPosition++] = (Number(bufferPassed[index++]) / 0x1869F);
-							this.buffer[this.endPosition++] = (Number(bufferPassed[index++]) / 0x1869F);
+							this.buffer[this.endPosition++] = Math.min(Math.max(Number(bufferPassed[index++]) / 0x1869F, -1), 1);
+							this.buffer[this.endPosition++] = Math.min(Math.max(Number(bufferPassed[index++]) / 0x1869F, -1), 1);
 							if (this.endPosition == this.bufferingTotal) {
 								this.endPosition = 0;
 							}
@@ -220,7 +220,7 @@ package {
 					}
 					else {
 						while (index < length) {
-							this.buffer[this.endPosition++] = (Number(bufferPassed[index++]) / 0x1869F);
+							this.buffer[this.endPosition++] = Math.min(Math.max(Number(bufferPassed[index++]) / 0x1869F, -1), 1);
 							if (this.endPosition == this.bufferingTotal) {
 								this.endPosition = 0;
 							}
