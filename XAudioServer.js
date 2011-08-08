@@ -17,6 +17,7 @@ function XAudioServer(channels, sampleRate, minBufferSize, maxBufferSize, underR
 	this.underRunCallback = (typeof underRunCallback == "function") ? underRunCallback : function () {};
 	defaultNeutralValue = (defaultValue >= -1 && defaultValue <= 1) ? defaultValue : 0;
 	this.audioType = -1;
+	this.mozAudioTail = [];
 	this.initializeAudio();
 }
 /*Pass your samples into here!
@@ -29,10 +30,10 @@ examples:
 XAudioServer.prototype.writeAudio = function (buffer) {
 	if (this.audioType == 0) {
 		//mozAudio:
-		this.samplesAlreadyWritten += this.audioHandle.mozWriteAudio(buffer);
+		this.samplesAlreadyWritten += this.writeMozAudio(buffer);
 		var samplesRequested = webAudioMinBufferSize - this.remainingBuffer();
 		if (samplesRequested > 0) {
-			this.samplesAlreadyWritten += this.audioHandle.mozWriteAudio(this.underRunCallback(samplesRequested));
+			this.samplesAlreadyWritten += this.writeMozAudio(this.underRunCallback(samplesRequested));
 		}
 	}
 	else if (this.audioType == 1) {
@@ -143,7 +144,7 @@ XAudioServer.prototype.executeCallback = function () {
 		//mozAudio:
 		var samplesRequested = webAudioMinBufferSize - this.remainingBuffer();
 		if (samplesRequested > 0) {
-			this.samplesAlreadyWritten += this.audioHandle.mozWriteAudio(this.underRunCallback(samplesRequested));
+			this.samplesAlreadyWritten += this.writeMozAudio(this.underRunCallback(samplesRequested));
 		}
 	}
 	else if (this.audioType == 1) {
@@ -214,7 +215,7 @@ XAudioServer.prototype.initializeAudio = function () {
 				this.samplesAlreadyWritten += this.audioHandle.mozWriteAudio(emptySampleFrame);
 			}
 		}
-		this.samplesAlreadyWritten += prebufferAmount + this.audioHandle.mozWriteAudio(getFloat32(webAudioMinBufferSize));
+		this.samplesAlreadyWritten += prebufferAmount + this.writeMozAudio(getFloat32(webAudioMinBufferSize));
 		webAudioMinBufferSize += prebufferAmount << 1;
 		this.audioType = 0;
 	}
@@ -276,6 +277,21 @@ XAudioServer.prototype.initializeAudio = function () {
 				this.sampleCount = 0;
 			}
 		}
+	}
+}
+XAudioServer.prototype.writeMozAudio = function (buffer) {
+	var length = this.mozAudioTail.length;
+	if (length > 0) {
+		var samplesAccepted = this.audioHandle.mozWriteAudio(this.mozAudioTail);
+		this.samplesAlreadyWritten += samplesAccepted;
+		this.mozAudioTail.splice(0, samplesAccepted);
+	}
+	length = Math.min(buffer.length, webAudioMaxBufferSize);
+	var samplesAccepted = this.audioHandle.mozWriteAudio(buffer);
+	this.samplesAlreadyWritten += samplesAccepted;
+	while (length > samplesAccepted) {
+		//Moz Audio wants us saving the tail:
+		this.mozAudioTail.push(buffer[--length]);
 	}
 }
 XAudioServer.prototype.checkFlashInit = function () {
