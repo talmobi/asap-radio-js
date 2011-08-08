@@ -289,9 +289,9 @@ XAudioServer.prototype.writeMozAudio = function (buffer) {
 	length = Math.min(buffer.length, webAudioMaxBufferSize);
 	var samplesAccepted = this.audioHandle.mozWriteAudio(buffer);
 	this.samplesAlreadyWritten += samplesAccepted;
-	while (length > samplesAccepted) {
+	for (var index = 0; length > samplesAccepted; length--) {
 		//Moz Audio wants us saving the tail:
-		this.mozAudioTail.push(buffer[--length]);
+		this.mozAudioTail.push(buffer[index++]);
 	}
 }
 XAudioServer.prototype.checkFlashInit = function () {
