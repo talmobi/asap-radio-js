@@ -30,10 +30,10 @@ examples:
 XAudioServer.prototype.writeAudio = function (buffer) {
 	if (this.audioType == 0) {
 		//mozAudio:
-		this.samplesAlreadyWritten += this.writeMozAudio(buffer);
+		this.writeMozAudio(buffer);
 		var samplesRequested = webAudioMinBufferSize - this.remainingBuffer();
 		if (samplesRequested > 0) {
-			this.samplesAlreadyWritten += this.writeMozAudio(this.underRunCallback(samplesRequested));
+			this.writeMozAudio(this.underRunCallback(samplesRequested));
 		}
 	}
 	else if (this.audioType == 1) {
@@ -144,7 +144,7 @@ XAudioServer.prototype.executeCallback = function () {
 		//mozAudio:
 		var samplesRequested = webAudioMinBufferSize - this.remainingBuffer();
 		if (samplesRequested > 0) {
-			this.samplesAlreadyWritten += this.writeMozAudio(this.underRunCallback(samplesRequested));
+			this.writeMozAudio(this.underRunCallback(samplesRequested));
 		}
 	}
 	else if (this.audioType == 1) {
@@ -215,7 +215,7 @@ XAudioServer.prototype.initializeAudio = function () {
 				this.samplesAlreadyWritten += this.audioHandle.mozWriteAudio(emptySampleFrame);
 			}
 		}
-		this.samplesAlreadyWritten += prebufferAmount + this.writeMozAudio(getFloat32(webAudioMinBufferSize));
+		this.samplesAlreadyWritten += prebufferAmount;
 		webAudioMinBufferSize += prebufferAmount << 1;
 		this.audioType = 0;
 	}
