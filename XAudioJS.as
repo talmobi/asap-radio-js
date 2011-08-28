@@ -5,8 +5,6 @@ package {
     import flash.external.ExternalInterface;
     public class XAudioJS extends Sprite {
         public var sound:Sound = null;
-		public var bufferAmount:int = 2500;
-		public var bufferTotal:int = 5000;
 		public var channel1Buffer:Array = new Array(4096);
 		public var channel2Buffer:Array = new Array(4096);
 		public var channels:int = 0;
@@ -17,30 +15,27 @@ package {
 			ExternalInterface.addCallback('initialize',  initialize);
         }
 		//Initialization function for the flash backend of XAudioJS:
-        public function initialize(channels:Number, bufferingTotal:Number, defaultNeutralLevel:Number):void {
+        public function initialize(channels:Number, defaultNeutralLevel:Number):void {
 			//Initialize the new settings:
 			this.channels = (int(channels) == 2) ? 2 : 1;
-			this.bufferAmount = Math.min(Math.max(int(bufferingTotal - (bufferingTotal % this.channels)), 2048), 4096);
-			this.bufferTotal = this.bufferAmount << 1;
 			this.defaultNeutralLevel = Math.min(Math.max(defaultNeutralLevel, -1), 1);
 			this.checkForSound();
 		}
 		//Calls the JavaScript function responsible for the polyfill:
 		public function requestSamples():Boolean {
-			var rawBuffer:String = ExternalInterface.call("audioOutputFlashEvent", " ");
+			var rawBuffer:String = ExternalInterface.call("audioOutputFlashEvent");
 			if (rawBuffer !== null) {
 				var buffer:Array = rawBuffer.split(" ");
-				this.sampleFramesFound = Math.min(buffer.length, this.bufferTotal) >> (this.channels - 1);
 				if ((buffer.length % this.channels) == 0) {	//Outsmart bad programmers from messing us up. :/
 					var index:int = 0;
-					if (this.channels == 2) {
-						for (; index < this.sampleFramesFound; index++) {
+					if (this.channels == 2) {				//Create separate loops for the different channel modes for optimization:
+						for (this.sampleFramesFound = Math.min(buffer.length >> 1, 4096); index < this.sampleFramesFound; index++) {
 							this.channel1Buffer[index] = Math.min(Math.max(Number(buffer[index]) / 0x1869F, -1), 1);
 							this.channel2Buffer[index] = Math.min(Math.max(Number(buffer[index + this.sampleFramesFound]) / 0x1869F, -1), 1);
 						}
 					}
 					else {
-						for (; index < this.sampleFramesFound; index++) {
+						for (this.sampleFramesFound = Math.min(buffer.length, 4096); index < this.sampleFramesFound; index++) {
 							this.channel1Buffer[index] = Math.min(Math.max(Number(buffer[index]) / 0x1869F, -1), 1);
 						}
 					}
