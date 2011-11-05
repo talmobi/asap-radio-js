@@ -388,25 +388,25 @@ function audioOutputFlashEvent() {		//The callback that flash calls...
 }
 function generateFlashStereoString() {	//Convert the arrays to one long string for speed.
 	//Make sure we send an array and not a typed array!
-	var copyArray = [];
-	for (var index = 0; index < samplesFound; index++) {
+	var copyBinaryString = "";
+	for (var index = 0; index < samplesFound; ++index) {
 		//Sanitize the buffer:
-		copyArray[index] = (Math.min(Math.max(resampleChannel1Buffer[index], -1), 1) * 0x1869F) | 0;
+		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel1Buffer[index] + 1, 0), 2) * 0x3FFF) | 0x8000);
 	}
-	for (var index2 = 0; index2 < samplesFound; index++) {
+	for (index = 0; index < samplesFound; ++index) {
 		//Sanitize the buffer:
-		copyArray[index] = (Math.min(Math.max(resampleChannel2Buffer[index2++], -1), 1) * 0x1869F) | 0;
+		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel2Buffer[index] + 1, 0), 2) * 0x3FFF) | 0x8000);
 	}
-	return copyArray.join(" ");
+	return copyBinaryString;
 }
 function generateFlashMonoString() {	//Convert the array to one long string for speed.
 	//Make sure we send an array and not a typed array!
-	var copyArray = [];
-	for (var index = 0; index < samplesFound; index++) {
+	var copyBinaryString = "";
+	for (var index = 0; index < samplesFound; ++index) {
 		//Sanitize the buffer:
-		copyArray[index] = (Math.min(Math.max(resampleChannel1Buffer[index], -1), 1) * 0x1869F) | 0;
+		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel1Buffer[index] + 1, 0), 2) * 0x3FFF) | 0x8000);
 	}
-	return copyArray.join(" ");
+	return copyBinaryString;
 }
 //Audio API Event Handler:
 var audioContextHandle = null;
