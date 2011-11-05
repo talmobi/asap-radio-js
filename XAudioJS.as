@@ -27,15 +27,15 @@ package {
 			if (buffer !== null) {
 				if ((buffer.length % this.channels) == 0) {	//Outsmart bad programmers from messing us up. :/
 					var index:int = 0;
-					var channel1Sample:int = 0;
+					var channel1Sample:Number = 0;
 					if (this.channels == 2) {				//Create separate loops for the different channel modes for optimization:
-						var channel2Sample:int = 0;
+						var channel2Sample:Number = 0;
 						for (this.sampleFramesFound = Math.min(buffer.length >> 1, 4096); index < this.sampleFramesFound; ++index) {
 							channel1Sample = buffer.charCodeAt(index);
 							channel2Sample = buffer.charCodeAt(index + this.sampleFramesFound);
-							if (channel1Sample >= 0x3000 && channel1Sample < 0x4000 && channel2Sample >= 0x3000 && channel2Sample < 0x4000) {
-								this.channel1Buffer[index] = Math.min(Math.max((channel1Sample & 0xFFF) / 0x7FF, 0), 2) - 1;
-								this.channel2Buffer[index] = Math.min(Math.max((channel2Sample & 0xFFF) / 0x7FF, 0), 2) - 1;
+							if (channel1Sample >= 0x3000 && channel1Sample < 0xB000 && channel2Sample >= 0x3000 && channel2Sample < 0xB000) {
+								this.channel1Buffer[index] = ((channel1Sample - 0x3000) / 0x3FFF) - 1;
+								this.channel2Buffer[index] = ((channel2Sample - 0x3000) / 0x3FFF) - 1;
 							}
 							else {
 								return false;
@@ -45,8 +45,8 @@ package {
 					else {
 						for (this.sampleFramesFound = Math.min(buffer.length >> 1, 4096); index < this.sampleFramesFound; ++index) {
 							channel1Sample = buffer.charCodeAt(index);
-							if (channel1Sample >= 0x3000 && channel1Sample < 0x4000) {
-								this.channel1Buffer[index] = Math.min(Math.max((channel1Sample & 0xFFF) / 0x7FF, 0), 2) - 1;
+							if (channel1Sample >= 0x3000 && channel1Sample < 0xB000) {
+								this.channel1Buffer[index] = ((channel1Sample - 0x3000) / 0x3FFF) - 1;
 							}
 							else {
 								return false;
