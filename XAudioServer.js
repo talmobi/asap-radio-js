@@ -259,10 +259,11 @@ XAudioServer.prototype.initializeWebAudio = function () {
 	if (launchedContext) {
 		webAudioEnabled = true;
 		resetCallbackAPIAudioBuffer(webAudioActualSampleRate, webAudioSamplesPerCallback);
-		if (navigator.platform != "MacIntel" && navigator.platform != "MacPPC") {
+		//Also blacklisting the mac versions due to shitty buffering that the js api provides. D:
+		//if (navigator.platform != "MacIntel" && navigator.platform != "MacPPC") {
 			//Google Chrome has a critical bug that they haven't patched for half a year yet, so I'm blacklisting the OSes affected.
 			throw(new Error(""));
-		}
+		//}
 		this.audioType = 1;
 	}
 	else {
