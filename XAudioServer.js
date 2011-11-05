@@ -260,10 +260,10 @@ XAudioServer.prototype.initializeWebAudio = function () {
 		webAudioEnabled = true;
 		resetCallbackAPIAudioBuffer(webAudioActualSampleRate, webAudioSamplesPerCallback);
 		//Also blacklisting the mac versions due to shitty buffering that the js api provides. D:
-		//if (navigator.platform != "MacIntel" && navigator.platform != "MacPPC") {
+		if (navigator.platform != "MacIntel" && navigator.platform != "MacPPC") {
 			//Google Chrome has a critical bug that they haven't patched for half a year yet, so I'm blacklisting the OSes affected.
 			throw(new Error(""));
-		//}
+		}
 		this.audioType = 1;
 	}
 	else {
@@ -392,11 +392,11 @@ function generateFlashStereoString() {	//Convert the arrays to one long string f
 	var copyBinaryString = "";
 	for (var index = 0; index < samplesFound; ++index) {
 		//Sanitize the buffer:
-		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel1Buffer[index] + 1, 0), 2) * 0x3FFF) | 0x8000);
+		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel1Buffer[index] + 1, 0), 2) * 0x7FF) | 0x1000);
 	}
 	for (index = 0; index < samplesFound; ++index) {
 		//Sanitize the buffer:
-		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel2Buffer[index] + 1, 0), 2) * 0x3FFF) | 0x8000);
+		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel2Buffer[index] + 1, 0), 2) * 0x7FF) | 0x1000);
 	}
 	return copyBinaryString;
 }
@@ -405,7 +405,7 @@ function generateFlashMonoString() {	//Convert the array to one long string for 
 	var copyBinaryString = "";
 	for (var index = 0; index < samplesFound; ++index) {
 		//Sanitize the buffer:
-		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel1Buffer[index] + 1, 0), 2) * 0x3FFF) | 0x8000);
+		copyBinaryString += String.fromCharCode((Math.min(Math.max(resampleChannel1Buffer[index] + 1, 0), 2) * 0x7FF) | 0x1000);
 	}
 	return copyBinaryString;
 }

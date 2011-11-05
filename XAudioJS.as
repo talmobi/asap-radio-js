@@ -29,13 +29,13 @@ package {
 					var index:int = 0;
 					if (this.channels == 2) {				//Create separate loops for the different channel modes for optimization:
 						for (this.sampleFramesFound = Math.min(buffer.length >> 1, 4096); index < this.sampleFramesFound; ++index) {
-							this.channel1Buffer[index] = Math.min(Math.max(((buffer.charCodeAt(index) & 0x7FFF) / 16383.5) - 1, -1), 1);
-							this.channel2Buffer[index] = Math.min(Math.max(((buffer.charCodeAt(index + this.sampleFramesFound) & 0x7FFF) / 16383.5) - 1, -1), 1);
+							this.channel1Buffer[index] = Math.min(Math.max(((buffer.charCodeAt(index) & 0xFFF) / 2047.5) - 1, -1), 1);
+							this.channel2Buffer[index] = Math.min(Math.max(((buffer.charCodeAt(index + this.sampleFramesFound) & 0xFFF) / 2047.5) - 1, -1), 1);
 						}
 					}
 					else {
 						for (this.sampleFramesFound = Math.min(buffer.length, 4096); index < this.sampleFramesFound; ++index) {
-							this.channel1Buffer[index] = Math.min(Math.max(((buffer.charCodeAt(index) & 0x7FFF) / 16383.5) - 1, -1), 1);
+							this.channel1Buffer[index] = Math.min(Math.max(((buffer.charCodeAt(index) & 0xFFF) / 2047.5) - 1, -1), 1);
 						}
 					}
 					return true;
