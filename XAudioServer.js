@@ -12,8 +12,8 @@ function XAudioServer(channels, sampleRate, minBufferSize, maxBufferSize, underR
 	this.audioChannels = (channels == 2) ? 2 : 1;
 	webAudioMono = (this.audioChannels == 1);
 	XAudioJSSampleRate = (sampleRate >= 100 || sampleRate < 256000) ? Math.floor(sampleRate) : 22050;
-	webAudioMinBufferSize = (minBufferSize >= (Math.max(webAudioSamplesPerCallback, samplesPerCallback) << 1) && minBufferSize < maxBufferSize) ? (minBufferSize | 0) : (Math.max(webAudioSamplesPerCallback, samplesPerCallback) << 1);
-	webAudioMaxBufferSize = (Math.floor(maxBufferSize) > webAudioMinBufferSize + this.audioChannels) ? Math.floor(maxBufferSize) : (this.minBufferSize * 2);
+	webAudioMinBufferSize = (minBufferSize >= (Math.max(webAudioSamplesPerCallback, samplesPerCallback) << 1) && minBufferSize < maxBufferSize) ? (minBufferSize & ((webAudioMono) ? 0xFFFFFFFF : 0xFFFFFFFE)) : (Math.max(webAudioSamplesPerCallback, samplesPerCallback) << 1);
+	webAudioMaxBufferSize = (Math.floor(maxBufferSize) > webAudioMinBufferSize + this.audioChannels) ? Math.floor(maxBufferSize & ((webAudioMono) ? 0xFFFFFFFF : 0xFFFFFFFE)) : (minBufferSize << 1);
 	this.underRunCallback = (typeof underRunCallback == "function") ? underRunCallback : function () {};
 	defaultNeutralValue = (defaultValue >= -1 && defaultValue <= 1 && defaultValue != 0) ? defaultValue : 0;
 	this.audioType = -1;
