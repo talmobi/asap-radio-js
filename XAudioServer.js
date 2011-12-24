@@ -60,7 +60,7 @@ XAudioServer.prototype.writeAudio = function (buffer) {
 		this.callbackBasedWriteAudio(buffer);
 	}
 	else if (this.audioType == 2) {
-		if (this.checkFlashInit() || (webAudioEnabled && launchedContext)) {
+		if (this.checkFlashInit() || launchedContext) {
 			this.callbackBasedWriteAudio(buffer);
 		}
 		else if (this.mozAudioFound) {
@@ -84,7 +84,7 @@ XAudioServer.prototype.writeAudioNoCallback = function (buffer) {
 		this.callbackBasedWriteAudioNoCallback(buffer);
 	}
 	else if (this.audioType == 2) {
-		if (this.checkFlashInit() || (webAudioEnabled && launchedContext)) {
+		if (this.checkFlashInit() || launchedContext) {
 			this.callbackBasedWriteAudioNoCallback(buffer);
 		}
 		else if (this.mozAudioFound) {
@@ -104,7 +104,7 @@ XAudioServer.prototype.remainingBuffer = function () {
 		return (((resampledSamplesLeft() * resampleControl.ratioWeight) >> (this.audioChannels - 1)) << (this.audioChannels - 1)) + audioBufferSize;
 	}
 	else if (this.audioType == 2) {
-		if (this.checkFlashInit() || (webAudioEnabled && launchedContext)) {
+		if (this.checkFlashInit() || launchedContext) {
 			//Webkit Audio / Flash Plugin Audio:
 			return (((resampledSamplesLeft() * resampleControl.ratioWeight) >> (this.audioChannels - 1)) << (this.audioChannels - 1)) + audioBufferSize;
 		}
@@ -139,7 +139,7 @@ XAudioServer.prototype.executeCallback = function () {
 		this.callbackBasedExecuteCallback();
 	}
 	else if (this.audioType == 2) {
-		if (this.checkFlashInit() || (webAudioEnabled && launchedContext)) {
+		if (this.checkFlashInit() || launchedContext) {
 			this.callbackBasedExecuteCallback();
 		}
 		else if (this.mozAudioFound) {
@@ -199,12 +199,8 @@ XAudioServer.prototype.initializeMozAudio = function () {
 	this.audioType = 0;
 }
 XAudioServer.prototype.initializeWebAudio = function () {
-	if (webAudioEnabled && launchedContext) {
+	if (launchedContext) {
 		resetCallbackAPIAudioBuffer(webAudioActualSampleRate, webAudioSamplesPerCallback);
-		if (navigator.platform != "MacIntel" && navigator.platform != "MacPPC") {
-			//Google Chrome has a critical bug that they haven't patched for half a year yet, so I'm blacklisting the OSes affected.
-			throw(new Error(""));
-		}
 		this.audioType = 1;
 	}
 	else {
@@ -212,33 +208,39 @@ XAudioServer.prototype.initializeWebAudio = function () {
 	}
 }
 XAudioServer.prototype.initializeFlashAudio = function () {
-	var thisObj = this;
-	var mainContainerNode = document.createElement("div");
-	mainContainerNode.setAttribute("style", "position: fixed; bottom: 0px; right: 0px; margin: 0px; padding: 0px; border: none; width: 8px; height: 8px; overflow: hidden; z-index: -1000; ");
-	var containerNode = document.createElement("div");
-	containerNode.setAttribute("style", "position: static; border: none; width: 0px; height: 0px; visibility: hidden; margin: 8px; padding: 0px;");
-	containerNode.setAttribute("id", "XAudioJS");
-	mainContainerNode.appendChild(containerNode);
-	document.getElementsByTagName("body")[0].appendChild(mainContainerNode);
-	swfobject.embedSWF(
-		"XAudioJS.swf",
-		"XAudioJS",
-		"8",
-		"8",
-		"9.0.0",
-		"",
-		{},
-		{"allowscriptaccess":"always"},
-		{"style":"position: static; visibility: hidden; margin: 8px; padding: 0px; border: none"},
-		function (event) {
-			if (event.success) {
-				thisObj.audioHandleFlash = event.ref;
+	var existingFlashload = document.getElementById("XAudioJS");
+	if (existingFlashload == null) {
+		var thisObj = this;
+		var mainContainerNode = document.createElement("div");
+		mainContainerNode.setAttribute("style", "position: fixed; bottom: 0px; right: 0px; margin: 0px; padding: 0px; border: none; width: 8px; height: 8px; overflow: hidden; z-index: -1000; ");
+		var containerNode = document.createElement("div");
+		containerNode.setAttribute("style", "position: static; border: none; width: 0px; height: 0px; visibility: hidden; margin: 8px; padding: 0px;");
+		containerNode.setAttribute("id", "XAudioJS");
+		mainContainerNode.appendChild(containerNode);
+		document.getElementsByTagName("body")[0].appendChild(mainContainerNode);
+		swfobject.embedSWF(
+			"XAudioJS.swf",
+			"XAudioJS",
+			"8",
+			"8",
+			"9.0.0",
+			"",
+			{},
+			{"allowscriptaccess":"always"},
+			{"style":"position: static; visibility: hidden; margin: 8px; padding: 0px; border: none"},
+			function (event) {
+				if (event.success) {
+					thisObj.audioHandleFlash = event.ref;
+				}
+				else {
+					thisObj.audioType = 1;
+				}
 			}
-			else {
-				thisObj.audioType = 1;
-			}
-		}
-	);
+		);
+	}
+	else {
+		this.audioHandleFlash = existingFlashload;
+	}
 	this.audioType = 2;
 }
 //Moz Audio Buffer Writing Handler:
@@ -262,7 +264,6 @@ XAudioServer.prototype.checkFlashInit = function () {
 	if (!this.flashInitialized && this.audioHandleFlash && this.audioHandleFlash.initialize) {
 		this.flashInitialized = true;
 		this.audioHandleFlash.initialize(this.audioChannels, defaultNeutralValue);
-		webAudioEnabled = false;
 		resetCallbackAPIAudioBuffer(44100, samplesPerCallback);
 	}
 	return this.flashInitialized;
@@ -331,7 +332,6 @@ var audioContextHandle = null;
 var audioNode = null;
 var audioSource = null;
 var launchedContext = false;
-var webAudioEnabled = true;
 var webAudioSamplesPerCallback = 2048;
 var audioContextSampleBuffer = [];
 var resampled = [];
@@ -347,36 +347,34 @@ var resampleBufferStart = 0;
 var resampleBufferEnd = 0;
 var resampleBufferSize = 2;
 function audioOutputEvent(event) {		//Web Audio API callback...
-	if (webAudioEnabled) {
-		var index = 0;
-		var buffer1 = event.outputBuffer.getChannelData(0);
-		var buffer2 = event.outputBuffer.getChannelData(1);
-		resampleRefill();
-		if (!webAudioMono) {
-			//STEREO:
-			while (index < webAudioSamplesPerCallback && resampleBufferStart != resampleBufferEnd) {
-				buffer1[index] = resampled[resampleBufferStart++];
-				buffer2[index++] = resampled[resampleBufferStart++];
-				if (resampleBufferStart == resampleBufferSize) {
-					resampleBufferStart = 0;
-				}
+	var index = 0;
+	var buffer1 = event.outputBuffer.getChannelData(0);
+	var buffer2 = event.outputBuffer.getChannelData(1);
+	resampleRefill();
+	if (!webAudioMono) {
+		//STEREO:
+		while (index < webAudioSamplesPerCallback && resampleBufferStart != resampleBufferEnd) {
+			buffer1[index] = resampled[resampleBufferStart++];
+			buffer2[index++] = resampled[resampleBufferStart++];
+			if (resampleBufferStart == resampleBufferSize) {
+				resampleBufferStart = 0;
 			}
 		}
-		else {
-			//MONO:
-			while (index < webAudioSamplesPerCallback && resampleBufferStart != resampleBufferEnd) {
-				buffer2[index] = buffer1[index] = resampled[resampleBufferStart++];
-				++index;
-				if (resampleBufferStart == resampleBufferSize) {
-					resampleBufferStart = 0;
-				}
-			}
-		}
-		//Pad with silence if we're underrunning:
-		while (index < webAudioSamplesPerCallback) {
-			buffer2[index] = buffer1[index] = defaultNeutralValue;
+	}
+	else {
+		//MONO:
+		while (index < webAudioSamplesPerCallback && resampleBufferStart != resampleBufferEnd) {
+			buffer2[index] = buffer1[index] = resampled[resampleBufferStart++];
 			++index;
+			if (resampleBufferStart == resampleBufferSize) {
+				resampleBufferStart = 0;
+			}
 		}
+	}
+	//Pad with silence if we're underrunning:
+	while (index < webAudioSamplesPerCallback) {
+		buffer2[index] = buffer1[index] = defaultNeutralValue;
+		++index;
 	}
 }
 function resampleRefill() {
