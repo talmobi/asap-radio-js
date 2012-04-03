@@ -2,24 +2,30 @@ package {
 	import flash.media.Sound;
 	import flash.events.SampleDataEvent;
 	import flash.display.Sprite;
-    import flash.external.ExternalInterface;
-    public class XAudioJS extends Sprite {
-        public var sound:Sound = null;
+	import flash.external.ExternalInterface;
+	public class XAudioJS extends Sprite {
+		public var sound:Sound = null;
 		public var channel1Buffer:Vector.<Number> = new Vector.<Number>(4096, true);
 		public var channel2Buffer:Vector.<Number> = new Vector.<Number>(4096, true);
 		public var channels:int = 0;
 		public var sampleRate:Number = 0;
-		public var defaultNeutralLevel:Number = 0;
+		public var volume:Number = 0;
 		public var sampleFramesFound:int = 0;
-        public function XAudioJS() {
-			ExternalInterface.addCallback('initialize',  initialize);
-        }
+		public function XAudioJS() {
+			ExternalInterface.addCallback('initialize', initialize);
+			ExternalInterface.addCallback('changeVolume', changeVolume);
+		}
 		//Initialization function for the flash backend of XAudioJS:
-        public function initialize(channels:Number, defaultNeutralLevel:Number):void {
+		public function initialize(channels:Number, newVolume:Number):void {
 			//Initialize the new settings:
 			this.channels = (int(channels) == 2) ? 2 : 1;
-			this.defaultNeutralLevel = Math.min(Math.max(defaultNeutralLevel, -1), 1);
+			this.changeVolume(newVolume);
 			this.checkForSound();
+		}
+		//Volume changing function for the flash backend of XAudioJS:
+		public function changeVolume(newVolume:Number):void {
+			//Set the new volume:
+			this.volume = Math.min(Math.max(newVolume, 0), 1);
 		}
 		//Calls the JavaScript function responsible for the polyfill:
 		public function requestSamples():Boolean {
@@ -39,8 +45,8 @@ package {
 							channel2Sample = buffer.charCodeAt(index + this.sampleFramesFound);
 							//Range-check the sample frame values:
 							if (channel1Sample >= 0x3000 && channel1Sample < 0xB000 && channel2Sample >= 0x3000 && channel2Sample < 0xB000) {
-								this.channel1Buffer[index] = ((channel1Sample - 0x3000) / 0x3FFF) - 1;
-								this.channel2Buffer[index] = ((channel2Sample - 0x3000) / 0x3FFF) - 1;
+								this.channel1Buffer[index] = this.volume * (((channel1Sample - 0x3000) / 0x3FFF) - 1);
+								this.channel2Buffer[index] = this.volume * (((channel2Sample - 0x3000) / 0x3FFF) - 1);
 							}
 							else {
 								return false;
@@ -54,7 +60,7 @@ package {
 							channel1Sample = buffer.charCodeAt(index);
 							//Range-check the sample frame value:
 							if (channel1Sample >= 0x3000 && channel1Sample < 0xB000) {
-								this.channel1Buffer[index] = ((channel1Sample - 0x3000) / 0x3FFF) - 1;
+								this.channel1Buffer[index] = this.volume * (((channel1Sample - 0x3000) / 0x3FFF) - 1);
 							}
 							else {
 								return false;
@@ -75,10 +81,10 @@ package {
 					soundCallback
 				);
 				this.sound.play();
-            }
+			}
 		}
 		//Flash Audio Refill Callback
-        public function soundCallback(e:SampleDataEvent):void {
+		public function soundCallback(e:SampleDataEvent):void {
 			var index:int = 0;
 			if (this.requestSamples()) {
 				if (this.channels == 2) {
@@ -98,9 +104,9 @@ package {
 			}
 			//Write silence if no samples are found:
 			while (++index <= 2048) {
-				e.data.writeFloat(this.defaultNeutralLevel);
-				e.data.writeFloat(this.defaultNeutralLevel);
+				e.data.writeFloat(0);
+				e.data.writeFloat(0);
 			}
-        }
-    }
+		}
+	}
 }

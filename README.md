@@ -11,7 +11,7 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 <br>
 <h3>How To Initialize:</h3>
 <dl>
-	<dt>new XAudioServer(int channels, int sampleRate, int bufferLow, int bufferHigh, function underRunCallback, int defaultNeutralLevel);</dt>
+	<dt>new XAudioServer(int channels, double sampleRate, int bufferLow, int bufferHigh, function underRunCallback, double volume);</dt>
 		<dd>Make sure only one instance of XAudioServer is running at any time.</dd>
 		<dd>bufferLow MUST be less than bufferHigh.</dd>
 		<dd>
@@ -22,7 +22,7 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 				Return: Array of samples to be passed into the underlying audio buffer. MUST be divisible by number of channels used (Whole frames required.). The return array length DOES NOT NEED to be of length samplesRequested.
 			</blockquote>
 		</dd>
-		<dd>defaultNeutralLevel is the default silence waveform position (0 is the true natural default that you can override here.).</dd>
+		<dd>volume is the output volume.</dd>
 </dl>
 <h3>Function Reference:</h3>
 <dl>
@@ -37,5 +37,9 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 	<dt>void executeCallback (void)</dt>
 		<dd>Arguments: void (None).</dd>
 		<dd>Functionality: Executes the audio sample under-run callback if the samples remaining is below the set buffer low limit.</dd>
+		<dd>Return: void (None).</dd>
+	<dt>void changeVolume (double)</dt>
+		<dd>Arguments: double float between 0 and 1 specifying the volume.</dd>
+		<dd>Functionality: Changes the volume. Will affect samples in buffer, so has a low-latency effect (Use this to do a fast-mute).</dd>
 		<dd>Return: void (None).</dd>
 </dl>
