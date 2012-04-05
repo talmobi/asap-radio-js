@@ -32,7 +32,7 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 		<dd>Return: void (None).</dd>
 	<dt>void writeAudioNoCallback (Array buffer)</dt>
 		<dd>Arguments: Pass an array of audio samples that is divisible by the number of audio channels utilized (buffer % channels == 0).</dd>
-		<dd>Functionality: Passes the audio samples directly into the underlying audio subsystem, <b>and can call the specified sample buffer under-run callback as needed.<b>.</dd>
+		<dd>Functionality: Passes the audio samples directly into the underlying audio subsystem.</dd>
 		<dd>Return: void (None).</dd>
 	<dt>int remainingBuffer (void)</dt>
 		<dd>Arguments: void (None).</dd>
