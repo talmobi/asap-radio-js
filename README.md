@@ -11,7 +11,7 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 <br>
 <h3>How To Initialize:</h3>
 <dl>
-	<dt>new XAudioServer(int channels, double sampleRate, int bufferLow, int bufferHigh, function underRunCallback, double volume);</dt>
+	<dt>new XAudioServer(int channels, double sampleRate, int bufferLow, int bufferHigh, function underRunCallback, double volume, function failureCallback);</dt>
 		<dd>Make sure only one instance of XAudioServer is running at any time.</dd>
 		<dd>bufferLow MUST be less than bufferHigh.</dd>
 		<dd>
@@ -23,6 +23,12 @@ and the passive callback API of Web Audio and introduces an abstraction layers t
 			</blockquote>
 		</dd>
 		<dd>volume is the output volume.</dd>
+		<dd>
+			<h4>void failureCallback (void)</h4>
+			<blockquote>
+				Functionality: JS developers set this callback to handle no audio support being available from the browser.
+			</blockquote>
+		</dd>
 </dl>
 <h3>Function Reference:</h3>
 <dl>
