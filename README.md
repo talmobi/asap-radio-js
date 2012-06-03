@@ -5,9 +5,7 @@ Since Firefox 4.0 only had the Mozilla Audio Data API and experimental (at the t
 there instantly was a need for abstracting the two APIs. This simple JavaScript library abstracts the push-for-audio API of Mozilla Audio
 and the passive callback API of Web Audio and introduces an abstraction layers that provides a push-for-audio and a callback API in one.</p>
 <br>
-<b>As of June 4, 2011 Adobe Flash support (ActionScript 3 / Flash 10) has been added as a fallback of Mozilla Audio Data API and the WebKit Web Audio API.</b>
-<br>
-<b>As of December 24, 2011, The WAV PCM data URI generation fallback was removed due to poor realtime performance and unsuitability in reality.</b>
+<b>This software is hereby placed in the public domain for anyone to use.</b>
 <br>
 <h3>How To Initialize:</h3>
 <dl>
