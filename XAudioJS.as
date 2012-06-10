@@ -7,7 +7,6 @@ package {
 		public var sound:Sound = null;
 		public var channelBuffer:Vector.<Number> = new Vector.<Number>(8192, true);
 		public var channels:int = 0;
-		public var sampleRate:Number = 0;
 		public var volume:Number = 0;
 		public var samplesFound:int = 0;
 		public function XAudioJS() {
@@ -29,43 +28,17 @@ package {
 		//Calls the JavaScript function responsible for the polyfill:
 		public function requestSamples():Boolean {
 			//Call the javascript callback function:
-			var buffer:String = ExternalInterface.call("audioOutputFlashEvent");
+			var buffer:String = ExternalInterface.call("XAudioJSFlashAudioEvent");
 			//If we received an appropriate response:
 			if (buffer !== null) {
 				if ((buffer.length % this.channels) == 0) {	//Outsmart bad programmers from messing us up. :/
-					var index:int = 0;
-					var channel1Sample:Number = 0;
-					this.samplesFound = Math.min(buffer.length, 4096);
-					if (this.channels == 2) {				//Create separate loops for the different channel modes for optimization:
-						//STEREO:
-						var channel2Sample:Number = 0;
-						while (index < this.samplesFound) {
-							//Get the unsigned 15-bit encoded sample value at +0x3000 offset for each channel:
-							channel1Sample = buffer.charCodeAt(index);
-							channel2Sample = buffer.charCodeAt(index + 1);
-							//Range-check the sample frame values:
-							if (channel1Sample >= 0x3000 && channel1Sample < 0xB000 && channel2Sample >= 0x3000 && channel2Sample < 0xB000) {
-								this.channelBuffer[index++] = this.volume * (((channel1Sample - 0x3000) / 0x3FFF) - 1);
-								this.channelBuffer[index++] = this.volume * (((channel2Sample - 0x3000) / 0x3FFF) - 1);
-							}
-							else {
-								return false;
-							}
-						}
-					}
-					else {
-						//MONO:
-						while (index < this.samplesFound) {
-							//Get the unsigned 15-bit encoded sample value at +0x3000 offset for the mono channel:
-							channel1Sample = buffer.charCodeAt(index);
-							//Range-check the sample frame value:
-							if (channel1Sample >= 0x3000 && channel1Sample < 0xB000) {
-								this.channelBuffer[index++] = this.volume * (((channel1Sample - 0x3000) / 0x3FFF) - 1);
-							}
-							else {
-								return false;
-							}
-						}
+					var channelSample:Number = 0;
+					this.samplesFound = Math.min(buffer.length, 4096 * this.channels);
+					for (var index:int = 0; index < this.samplesFound; ++index) {
+						//Get the unsigned 15-bit encoded sample value at +0x3000 offset:
+						channelSample = buffer.charCodeAt(index);
+						//Range-check the sample frame value and convert it:
+						this.channelBuffer[index] = (channelSample >= 0x3000 && channelSample < 0xAFFF) ? (this.volume * (((channelSample - 0x3000) / 0x3FFF) - 1)) : 0;
 					}
 					return true;
 				}
