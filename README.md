@@ -1,9 +1,7 @@
 <h1>XAudioJS</h1>
 <h3>A minimal cross-browser API for writing PCM audio samples:</h3>
-<p>This API was originally conceived as part of the JavaScript GameBoy Color emulator handling audio support for various browsers.
-Since Firefox 4.0 only had the Mozilla Audio Data API and experimental (at the time) WebKit browsers utilized the Web Audio API, 
-there instantly was a need for abstracting the two APIs. This simple JavaScript library abstracts the push-for-audio API of Mozilla Audio
-and the passive callback API of Web Audio and introduces an abstraction layers that provides a push-for-audio and a callback API in one.</p>
+<p>This simple JavaScript library abstracts the push-for-audio API of Mozilla Audio, the MediaStream API in experimental Firefox Nightlies, and the passive callback API of Web Audio.
+This library introduces an abstraction layer that provides a push-for-audio and a callback API in one.</p>
 <br>
 <b>This software is hereby placed in the public domain for anyone to use.</b>
 <br>
