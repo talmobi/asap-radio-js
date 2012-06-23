@@ -12,9 +12,6 @@ function XAudioServer(channels, sampleRate, minBufferSize, maxBufferSize, underR
 	this.audioType = -1;
 	this.initializeAudio();
 }
-XAudioServer.prototype.MediaStreamWriteAudioNoCallback = function (buffer) {
-	this.audioHandleMediaStreamWorker.postMessage(buffer);
-}
 XAudioServer.prototype.MOZWriteAudioNoCallback = function (buffer) {
 	this.samplesAlreadyWritten += this.audioHandleMoz.mozWriteAudio(buffer);
 }
@@ -41,12 +38,9 @@ XAudioServer.prototype.writeAudio = function (buffer) {
 		case 2:
 			this.checkFlashInit();
 		case 1:
+		case 3:
 			this.callbackBasedWriteAudioNoCallback(buffer);
 			this.callbackBasedExecuteCallback();
-			break;
-		case 3:
-			this.MediaStreamWriteAudioNoCallback(buffer);
-			this.MediaStreamExecuteCallback();
 			break;
 		default:
 			this.failureCallback();
@@ -68,10 +62,8 @@ XAudioServer.prototype.writeAudioNoCallback = function (buffer) {
 		case 2:
 			this.checkFlashInit();
 		case 1:
-			this.callbackBasedWriteAudioNoCallback(buffer);
-			break;
 		case 3:
-			this.MediaStreamWriteAudioNoCallback(buffer);
+			this.callbackBasedWriteAudioNoCallback(buffer);
 			break;
 		default:
 			this.failureCallback();
@@ -86,9 +78,8 @@ XAudioServer.prototype.remainingBuffer = function () {
 		case 2:
 			this.checkFlashInit();
 		case 1:
-			return (Math.floor((resampledSamplesLeft() * XAudioJSResampleControl.ratioWeight) / this.audioChannels) * this.audioChannels) + XAudioJSAudioBufferSize;
 		case 3:
-			return this.audioHandleMediaStreamRemainingSamples;
+			return (Math.floor((resampledSamplesLeft() * XAudioJSResampleControl.ratioWeight) / this.audioChannels) * this.audioChannels) + XAudioJSAudioBufferSize;
 		default:
 			this.failureCallback();
 			return -1;
@@ -108,13 +99,6 @@ XAudioServer.prototype.callbackBasedExecuteCallback = function () {
 		this.callbackBasedWriteAudioNoCallback(this.underRunCallback(samplesRequested));
 	}
 }
-XAudioServer.prototype.MediaStreamExecuteCallback = function () {
-	//MediaStream API:
-	var samplesRequested = XAudioJSMinBufferSize - this.remainingBuffer();
-	if (samplesRequested > 0) {
-		this.MediaStreamWriteAudioNoCallback(this.underRunCallback(samplesRequested));
-	}
-}
 //If you just want your callback called for any possible refill (Execution of callback is still conditional):
 XAudioServer.prototype.executeCallback = function () {
 	switch (this.audioType) {
@@ -124,10 +108,8 @@ XAudioServer.prototype.executeCallback = function () {
 		case 2:
 			this.checkFlashInit();
 		case 1:
-			this.callbackBasedExecuteCallback();
-			break;
 		case 3:
-			this.MediaStreamExecuteCallback();
+			this.callbackBasedExecuteCallback();
 			break;
 		default:
 			this.failureCallback();
@@ -159,17 +141,18 @@ XAudioServer.prototype.initializeAudio = function () {
 }
 XAudioServer.prototype.initializeMediaStream = function () {
 	this.audioHandleMediaStream = new Audio();
-	this.audioHandleMediaStreamWorker = new Worker(XAudioJSsourceOfWorker.substring(0, XAudioJSsourceOfWorker.length - 3) + "MediaStreamWorker.js");
-	this.audioHandleMediaStreamProcessing = new ProcessedMediaStream(this.audioHandleMediaStreamWorker, Math.round(XAudioJSSampleRate), this.audioChannels);
+	this.resetCallbackAPIAudioBuffer(44100);
+	if (audioHandleMediaStreamWorker) {
+		//WebWorker is not GC'd, so manually collect it:0
+		audioHandleMediaStreamWorker.terminate();
+	}
+	audioHandleMediaStreamWorker = new Worker(XAudioJSsourceOfWorker.substring(0, XAudioJSsourceOfWorker.length - 3) + "MediaStreamWorker.js");
+	this.audioHandleMediaStreamProcessing = new ProcessedMediaStream(audioHandleMediaStreamWorker, 44100, this.audioChannels);
 	this.audioHandleMediaStream.src = this.audioHandleMediaStreamProcessing;
 	this.audioHandleMediaStream.volume = XAudioJSVolume;
-	this.audioHandleMediaStreamRemainingSamples = 0;
-	var parentObj = this;
-	this.audioHandleMediaStreamWorker.onmessage = function (event) {
-		parentObj.audioHandleMediaStreamRemainingSamples = event.data;
-	}
-	this.audioType = 3;
+	audioHandleMediaStreamWorker.onmessage = XAudioJSMediaStreamPushAudio;
 	this.audioHandleMediaStream.play();
+	this.audioType = 3;
 }
 XAudioServer.prototype.initializeMozAudio = function () {
 	this.audioHandleMoz = new Audio();
@@ -357,6 +340,7 @@ var XAudioJSAudioBufferSize = 0;
 var XAudioJSResampleBufferStart = 0;
 var XAudioJSResampleBufferEnd = 0;
 var XAudioJSResampleBufferSize = 0;
+var audioHandleMediaStreamWorker = null;
 function audioOutputEvent(event) {		//Web Audio API callback...
 	var index = 0;
 	var buffer1 = event.outputBuffer.getChannelData(0);
@@ -399,6 +383,24 @@ function audioOutputEvent(event) {		//Web Audio API callback...
 		buffer2[index] = buffer1[index] = 0;
 		++index;
 	}
+}
+//MediaStream API buffer push
+function XAudioJSMediaStreamPushAudio(event) {
+	var index = 0;
+	var audioLengthRequested = event.data;
+	var XAudioJSMediaStreamBuffer = [];
+	var currentChannel = 0;
+	var currentOffset = 0;
+	resampleRefill();
+	while (index < audioLengthRequested && XAudioJSResampleBufferStart != XAudioJSResampleBufferEnd) {
+		for (currentChannel = 0, currentOffset = index++; currentChannel < XAudioJSChannelsAllocated; ++currentChannel, currentOffset += audioLengthRequested) {
+			XAudioJSMediaStreamBuffer[currentOffset] = XAudioJSResampledBuffer[XAudioJSResampleBufferStart++];
+		}
+		if (XAudioJSResampleBufferStart == XAudioJSResampleBufferSize) {
+			XAudioJSResampleBufferStart = 0;
+		}
+	}
+	audioHandleMediaStreamWorker.postMessage(XAudioJSMediaStreamBuffer);
 }
 function resampleRefill() {
 	if (XAudioJSAudioBufferSize > 0) {
