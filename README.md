@@ -1,7 +1,7 @@
 <h1>XAudioJS</h1>
 <h3>A minimal cross-browser API for writing PCM audio samples:</h3>
 <p>This simple JavaScript library abstracts the push-for-audio API of Mozilla Audio, the MediaStream API in experimental Firefox Nightlies, and the passive callback API of Web Audio.
-This library introduces an abstraction layer that provides a push-for-audio and a callback API in one.</p>
+This library introduces an abstraction layer that provides a push-for-audio and a callback API in one. We even provide a flash fallback to bring us to a total of 4 APIs supported.</p>
 <br>
 <b>This software is hereby placed in the public domain for anyone to use.</b>
 <br>
