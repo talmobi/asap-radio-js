@@ -141,13 +141,13 @@ XAudioServer.prototype.initializeAudio = function () {
 }
 XAudioServer.prototype.initializeMediaStream = function () {
 	this.audioHandleMediaStream = new Audio();
-	this.resetCallbackAPIAudioBuffer(44100);
+	this.resetCallbackAPIAudioBuffer(20000);
 	if (audioHandleMediaStreamWorker) {
 		//WebWorker is not GC'd, so manually collect it:0
 		audioHandleMediaStreamWorker.terminate();
 	}
 	audioHandleMediaStreamWorker = new Worker(XAudioJSsourceOfWorker.substring(0, XAudioJSsourceOfWorker.length - 3) + "MediaStreamWorker.js");
-	this.audioHandleMediaStreamProcessing = new ProcessedMediaStream(audioHandleMediaStreamWorker, 44100, this.audioChannels);
+	this.audioHandleMediaStreamProcessing = new ProcessedMediaStream(audioHandleMediaStreamWorker, 20000, this.audioChannels);
 	this.audioHandleMediaStream.src = this.audioHandleMediaStreamProcessing;
 	this.audioHandleMediaStream.volume = XAudioJSVolume;
 	audioHandleMediaStreamWorker.onmessage = XAudioJSMediaStreamPushAudio;
