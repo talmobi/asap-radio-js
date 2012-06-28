@@ -39,7 +39,8 @@ This library introduces an abstraction layer that provides a push-for-audio and 
 	<dt>int remainingBuffer (void)</dt>
 		<dd>Arguments: void (None).</dd>
 		<dd>Functionality: Returns the number of samples left in the audio system before running out of playable samples.</dd>
-		<dd>Return: int samples_remaining</dd>
+		<dd>Return (On valid): int samples_remaining (<b>CAN BE NEGATIVE<b>)</dd>
+		<dd>Return (On invalid): null</dd>
 	<dt>void executeCallback (void)</dt>
 		<dd>Arguments: void (None).</dd>
 		<dd>Functionality: Executes the audio sample under-run callback if the samples remaining is below the set buffer low limit.</dd>
