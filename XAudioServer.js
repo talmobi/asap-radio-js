@@ -174,9 +174,9 @@ XAudioServer.prototype.initializeWebAudio = function () {
 		if (XAudioJSWebAudioAudioNode) {
 			XAudioJSWebAudioAudioNode.disconnect(0);
 		}
-		XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createJavaScriptNode(XAudioJSSamplesPerCallback, 1, 2);			//Create 2 outputs and ignore the input buffer (Just copy buffer 1 over if mono)
-		XAudioJSWebAudioAudioNode.onaudioprocess = XAudioJSWebAudioEvent;															//Connect the audio processing event to a handling function so we can manipulate output
-		XAudioJSWebAudioAudioNode.connect(XAudioJSWebAudioContextHandle.destination);												//Send and chain the output of the audio manipulation to the system audio output.
+		XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createJavaScriptNode(XAudioJSSamplesPerCallback, 1, XAudioJSChannelsAllocated);	//Create the js event node.
+		XAudioJSWebAudioAudioNode.onaudioprocess = XAudioJSWebAudioEvent;																			//Connect the audio processing event to a handling function so we can manipulate output
+		XAudioJSWebAudioAudioNode.connect(XAudioJSWebAudioContextHandle.destination);																//Send and chain the output of the audio manipulation to the system audio output.
 		this.resetCallbackAPIAudioBuffer(XAudioJSWebAudioContextHandle.sampleRate);
 		this.audioType = 1;
 	}
