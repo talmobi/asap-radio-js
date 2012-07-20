@@ -10,6 +10,7 @@ This library introduces an abstraction layer that provides a push-for-audio and 
 	<dt>new XAudioServer(int channels, double sampleRate, int bufferLow, int bufferHigh, function underRunCallback, double volume, function failureCallback);</dt>
 		<dd>Make sure only one instance of XAudioServer is running at any time.</dd>
 		<dd>bufferLow MUST be less than bufferHigh.</dd>
+		<dd>bufferHigh sets the internal FIFO buffer length for all APIs except the Mozilla Audio Data API. Overfill on FIFO causes the oldest samples to be dropped first.</dd>
 		<dd>
 			<h4>Array underRunCallback (int samplesRequested)</h4>
 			<blockquote>
