@@ -1,6 +1,6 @@
 //2010-2012 Grant Galitz - XAudioJS realtime audio output compatibility library:
 var XAudioJSscriptsHandle = document.getElementsByTagName("script");
-var XAudioJSsourceOfWorker = XAudioJSscriptsHandle[XAudioJSscriptsHandle.length-1].src;
+var XAudioJSsourceHandle = XAudioJSscriptsHandle[XAudioJSscriptsHandle.length-1].src;
 function XAudioServer(channels, sampleRate, minBufferSize, maxBufferSize, underRunCallback, volume, failureCallback) {
 	XAudioJSChannelsAllocated = Math.max(channels, 1);
 	this.XAudioJSSampleRate = Math.abs(sampleRate);
@@ -146,7 +146,7 @@ XAudioServer.prototype.initializeMediaStream = function () {
 		//WebWorker is not GC'd, so manually collect it:
 		XAudioJSMediaStreamWorker.terminate();
 	}
-	XAudioJSMediaStreamWorker = new Worker(XAudioJSsourceOfWorker.substring(0, XAudioJSsourceOfWorker.length - 3) + "MediaStreamWorker.js");
+	XAudioJSMediaStreamWorker = new Worker(XAudioJSsourceHandle.substring(0, XAudioJSsourceHandle.length - 3) + "MediaStreamWorker.js");
 	this.audioHandleMediaStreamProcessing = new ProcessedMediaStream(XAudioJSMediaStreamWorker, XAudioJSMediaStreamSampleRate, XAudioJSChannelsAllocated);
 	this.audioHandleMediaStream.src = this.audioHandleMediaStreamProcessing;
 	this.audioHandleMediaStream.volume = XAudioJSVolume;
@@ -209,7 +209,7 @@ XAudioServer.prototype.initializeFlashAudio = function () {
 		mainContainerNode.appendChild(containerNode);
 		document.getElementsByTagName("body")[0].appendChild(mainContainerNode);
 		swfobject.embedSWF(
-			"XAudioJS.swf",
+			XAudioJSsourceHandle.substring(0, XAudioJSsourceHandle.length - 9) + "JS.swf",
 			"XAudioJS",
 			"8",
 			"8",
