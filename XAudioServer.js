@@ -291,7 +291,7 @@ XAudioServer.prototype.resetCallbackAPIAudioBuffer = function (APISampleRate) {
 	this.initializeResampler(APISampleRate);
 	XAudioJSResampledBuffer = this.getFloat32(XAudioJSResampleBufferSize);
 }
-XAudioServer.prototype.initializeResampler(sampleRate) {
+XAudioServer.prototype.initializeResampler = function (sampleRate) {
     XAudioJSResampleBufferSize = Math.max(XAudioJSMaxBufferSize * Math.ceil(sampleRate / this.XAudioJSSampleRate) + XAudioJSChannelsAllocated, XAudioJSSamplesPerCallback * XAudioJSChannelsAllocated);
 	XAudioJSResampleControl = new Resampler(this.XAudioJSSampleRate, sampleRate, XAudioJSChannelsAllocated, XAudioJSResampleBufferSize, true);
 }
