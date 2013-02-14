@@ -1,4 +1,4 @@
-//2010-2012 Grant Galitz - XAudioJS realtime audio output compatibility library:
+//2010-2013 Grant Galitz - XAudioJS realtime audio output compatibility library:
 var XAudioJSscriptsHandle = document.getElementsByTagName("script");
 var XAudioJSsourceHandle = XAudioJSscriptsHandle[XAudioJSscriptsHandle.length-1].src;
 function XAudioServer(channels, sampleRate, minBufferSize, maxBufferSize, underRunCallback, volume, failureCallback) {
@@ -12,7 +12,16 @@ function XAudioServer(channels, sampleRate, minBufferSize, maxBufferSize, underR
 	this.initializeAudio();
 }
 XAudioServer.prototype.MOZWriteAudioNoCallback = function (buffer) {
-	this.samplesAlreadyWritten += this.audioHandleMoz.mozWriteAudio(buffer);
+    //Resample before passing to the moz audio api:
+    var bufferLength  = buffer.length;
+    for (var bufferIndex = 0; bufferIndex < bufferLength; bufferIndex += XAudioJSMaxBufferSize) {
+        var resampleLength = XAudioJSResampleControl.resampler(XAudioJSGetArraySlice(buffer, Math.min(bufferLength - bufferIndex, XAudioJSMaxBufferSize)));
+        if (resampleLength > 0) {
+            var resampledResult = XAudioJSResampleControl.outputBuffer;
+            var resampledBuffer = XAudioJSGetArraySlice(resampledResult, resampleLength);
+            this.samplesAlreadyWritten += this.audioHandleMoz.mozWriteAudio(resampledBuffer);
+        }
+    }
 }
 XAudioServer.prototype.callbackBasedWriteAudioNoCallback = function (buffer) {
 	//Callback-centered audio APIs:
@@ -73,7 +82,7 @@ XAudioServer.prototype.writeAudioNoCallback = function (buffer) {
 XAudioServer.prototype.remainingBuffer = function () {
 	switch (this.audioType) {
 		case 0:
-			return this.samplesAlreadyWritten - this.audioHandleMoz.mozCurrentSampleOffset();
+			return Math.floor((this.samplesAlreadyWritten - this.audioHandleMoz.mozCurrentSampleOffset()) * XAudioJSResampleControl.ratioWeight / XAudioJSChannelsAllocated) * XAudioJSChannelsAllocated;
 		case 2:
 			this.checkFlashInit();
 		case 1:
@@ -156,8 +165,8 @@ XAudioServer.prototype.initializeMediaStream = function () {
 	this.audioType = 3;
 }
 XAudioServer.prototype.initializeMozAudio = function () {
-	this.audioHandleMoz = new Audio();
-	this.audioHandleMoz.mozSetup(XAudioJSChannelsAllocated, this.XAudioJSSampleRate);
+    this.audioHandleMoz = new Audio();
+	this.audioHandleMoz.mozSetup(XAudioJSChannelsAllocated, XAudioJSMozAudioSampleRate);
 	this.audioHandleMoz.volume = XAudioJSVolume;
 	this.samplesAlreadyWritten = 0;
 	this.audioType = 0;
@@ -166,11 +175,12 @@ XAudioServer.prototype.initializeMozAudio = function () {
 		var bufferAmount = (this.XAudioJSSampleRate * XAudioJSChannelsAllocated / 10) | 0;
 		bufferAmount -= bufferAmount % XAudioJSChannelsAllocated;
 		this.samplesAlreadyWritten -= bufferAmount;
-		
 	}
+    this.initializeResampler(XAudioJSMozAudioSampleRate);
 }
 XAudioServer.prototype.initializeWebAudio = function () {
-	if (XAudioJSWebAudioLaunchedContext) {
+	initializeWebAudioContext();
+    if (XAudioJSWebAudioLaunchedContext) {
 		if (XAudioJSWebAudioAudioNode) {
 			XAudioJSWebAudioAudioNode.disconnect(0);
 		}
@@ -278,9 +288,12 @@ XAudioServer.prototype.checkFlashInit = function () {
 XAudioServer.prototype.resetCallbackAPIAudioBuffer = function (APISampleRate) {
 	XAudioJSAudioContextSampleBuffer = this.getFloat32(XAudioJSMaxBufferSize);
 	XAudioJSAudioBufferSize = XAudioJSResampleBufferEnd = XAudioJSResampleBufferStart = 0;
-	XAudioJSResampleBufferSize = Math.max(XAudioJSMaxBufferSize * Math.ceil(APISampleRate / this.XAudioJSSampleRate) + XAudioJSChannelsAllocated, XAudioJSSamplesPerCallback * XAudioJSChannelsAllocated);
-	XAudioJSResampleControl = new Resampler(this.XAudioJSSampleRate, APISampleRate, XAudioJSChannelsAllocated, XAudioJSResampleBufferSize, true);
+	this.initializeResampler(APISampleRate);
 	XAudioJSResampledBuffer = this.getFloat32(XAudioJSResampleBufferSize);
+}
+XAudioServer.prototype.initializeResampler(sampleRate) {
+    XAudioJSResampleBufferSize = Math.max(XAudioJSMaxBufferSize * Math.ceil(sampleRate / this.XAudioJSSampleRate) + XAudioJSChannelsAllocated, XAudioJSSamplesPerCallback * XAudioJSChannelsAllocated);
+	XAudioJSResampleControl = new Resampler(this.XAudioJSSampleRate, sampleRate, XAudioJSChannelsAllocated, XAudioJSResampleBufferSize, true);
 }
 XAudioServer.prototype.getFloat32 = function (size) {
 	try {
@@ -357,6 +370,7 @@ var XAudioJSResampleBufferSize = 0;
 var XAudioJSMediaStreamWorker = null;
 var XAudioJSMediaStreamBuffer = [];
 var XAudioJSMediaStreamSampleRate = 44100;
+var XAudioJSMozAudioSampleRate = 44100;
 var XAudioJSSamplesPerCallback = 2048;			//Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
 var XAudioJSFlashTransportEncoder = null;
 var XAudioJSMediaStreamLengthAliasCounter = 0;
@@ -434,24 +448,27 @@ function XAudioJSResampledSamplesLeft() {
 	return ((XAudioJSResampleBufferStart <= XAudioJSResampleBufferEnd) ? 0 : XAudioJSResampleBufferSize) + XAudioJSResampleBufferEnd - XAudioJSResampleBufferStart;
 }
 function XAudioJSGetBufferSamples() {
+    return XAudioJSGetArraySlice(XAudioJSAudioContextSampleBuffer, XAudioJSAudioBufferSize);
+}
+function XAudioJSGetArraySlice(buffer, lengthOf) {
 	//Typed array and normal array buffer section referencing:
 	try {
-		return XAudioJSAudioContextSampleBuffer.subarray(0, XAudioJSAudioBufferSize);
+		return buffer.subarray(0, lengthOf);
 	}
 	catch (error) {
 		try {
 			//Regular array pass:
-			XAudioJSAudioContextSampleBuffer.length = XAudioJSAudioBufferSize;
-			return XAudioJSAudioContextSampleBuffer;
+			buffer.length = lengthOf;
+			return buffer;
 		}
 		catch (error) {
 			//Nightly Firefox 4 used to have the subarray function named as slice:
-			return XAudioJSAudioContextSampleBuffer.slice(0, XAudioJSAudioBufferSize);
+			return buffer.slice(0, lengthOf);
 		}
 	}
 }
 //Initialize WebKit Audio:
-(function () {
+function initializeWebAudioContext() {
 	if (!XAudioJSWebAudioLaunchedContext) {
 		try {
 			XAudioJSWebAudioContextHandle = new webkitAudioContext();							//Create a system audio context.
@@ -466,4 +483,4 @@ function XAudioJSGetBufferSamples() {
 		}
 		XAudioJSWebAudioLaunchedContext = true;
 	}
-})();
+}
