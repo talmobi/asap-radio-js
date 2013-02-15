@@ -14,8 +14,12 @@ function XAudioServer(channels, sampleRate, minBufferSize, maxBufferSize, underR
 XAudioServer.prototype.MOZWriteAudioNoCallback = function (buffer) {
     //Resample before passing to the moz audio api:
     var bufferLength  = buffer.length;
-    for (var bufferIndex = 0; bufferIndex < bufferLength; bufferIndex += XAudioJSMaxBufferSize) {
-        var resampleLength = XAudioJSResampleControl.resampler(XAudioJSGetArraySlice(buffer, Math.min(bufferLength - bufferIndex, XAudioJSMaxBufferSize)));
+    for (var bufferIndex = 0; bufferIndex < bufferLength;) {
+        var sliceLength = Math.min(bufferLength - bufferIndex, XAudioJSMaxBufferSize);
+        for (var sliceIndex = 0; sliceIndex < sliceLength; ++sliceIndex) {
+            XAudioJSAudioContextSampleBuffer[sliceIndex] = buffer[bufferIndex++];
+        }
+        var resampleLength = XAudioJSResampleControl.resampler(XAudioJSGetArraySlice(XAudioJSAudioContextSampleBuffer, sliceIndex));
         if (resampleLength > 0) {
             var resampledResult = XAudioJSResampleControl.outputBuffer;
             var resampledBuffer = XAudioJSGetArraySlice(resampledResult, resampleLength);
@@ -289,9 +293,10 @@ XAudioServer.prototype.resetCallbackAPIAudioBuffer = function (APISampleRate) {
 	XAudioJSAudioContextSampleBuffer = this.getFloat32(XAudioJSMaxBufferSize);
 	XAudioJSAudioBufferSize = XAudioJSResampleBufferEnd = XAudioJSResampleBufferStart = 0;
 	this.initializeResampler(APISampleRate);
-	XAudioJSResampledBuffer = this.getFloat32(XAudioJSResampleBufferSize);
+    XAudioJSResampledBuffer = this.getFloat32(XAudioJSResampleBufferSize);
 }
 XAudioServer.prototype.initializeResampler = function (sampleRate) {
+    XAudioJSAudioContextSampleBuffer = this.getFloat32(XAudioJSMaxBufferSize);
     XAudioJSResampleBufferSize = Math.max(XAudioJSMaxBufferSize * Math.ceil(sampleRate / this.XAudioJSSampleRate) + XAudioJSChannelsAllocated, XAudioJSSamplesPerCallback * XAudioJSChannelsAllocated);
 	XAudioJSResampleControl = new Resampler(this.XAudioJSSampleRate, sampleRate, XAudioJSChannelsAllocated, XAudioJSResampleBufferSize, true);
 }
