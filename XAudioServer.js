@@ -183,20 +183,28 @@ XAudioServer.prototype.initializeMozAudio = function () {
     this.initializeResampler(XAudioJSMozAudioSampleRate);
 }
 XAudioServer.prototype.initializeWebAudio = function () {
-	initializeWebAudioContext();
-    if (XAudioJSWebAudioLaunchedContext) {
-		if (XAudioJSWebAudioAudioNode) {
-			XAudioJSWebAudioAudioNode.disconnect(0);
-		}
-		XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createJavaScriptNode(XAudioJSSamplesPerCallback, 1, XAudioJSChannelsAllocated);	//Create the js event node.
-		XAudioJSWebAudioAudioNode.onaudioprocess = XAudioJSWebAudioEvent;																			//Connect the audio processing event to a handling function so we can manipulate output
-		XAudioJSWebAudioAudioNode.connect(XAudioJSWebAudioContextHandle.destination);																//Send and chain the output of the audio manipulation to the system audio output.
-		this.resetCallbackAPIAudioBuffer(XAudioJSWebAudioContextHandle.sampleRate);
-		this.audioType = 1;
-	}
-	else {
-		throw(new Error(""));
-	}
+    if (!XAudioJSWebAudioLaunchedContext) {
+        try {
+            XAudioJSWebAudioContextHandle = new webkitAudioContext();							//Create a system audio context.
+        }
+        catch (error) {
+            XAudioJSWebAudioContextHandle = new AudioContext();								//Create a system audio context.
+        }
+        XAudioJSWebAudioLaunchedContext = true;
+    }
+    if (XAudioJSWebAudioAudioNode) {
+        XAudioJSWebAudioAudioNode.disconnect(0);
+    }
+    try {
+        XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createJavaScriptNode(XAudioJSSamplesPerCallback, 1, XAudioJSChannelsAllocated);	//Create the js event node.
+    }
+    catch (error) {
+        XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createScriptProcessor(XAudioJSSamplesPerCallback, 1, XAudioJSChannelsAllocated);	//Create the js event node.
+    }
+    XAudioJSWebAudioAudioNode.onaudioprocess = XAudioJSWebAudioEvent;																			//Connect the audio processing event to a handling function so we can manipulate output
+    XAudioJSWebAudioAudioNode.connect(XAudioJSWebAudioContextHandle.destination);																//Send and chain the output of the audio manipulation to the system audio output.
+    this.resetCallbackAPIAudioBuffer(XAudioJSWebAudioContextHandle.sampleRate);
+    this.audioType = 1;
 }
 XAudioServer.prototype.initializeFlashAudio = function () {
 	var existingFlashload = document.getElementById("XAudioJS");
@@ -290,9 +298,8 @@ XAudioServer.prototype.checkFlashInit = function () {
 }
 //Set up the resampling:
 XAudioServer.prototype.resetCallbackAPIAudioBuffer = function (APISampleRate) {
-	XAudioJSAudioContextSampleBuffer = this.getFloat32(XAudioJSMaxBufferSize);
 	XAudioJSAudioBufferSize = XAudioJSResampleBufferEnd = XAudioJSResampleBufferStart = 0;
-	this.initializeResampler(APISampleRate);
+    this.initializeResampler(APISampleRate);
     XAudioJSResampledBuffer = this.getFloat32(XAudioJSResampleBufferSize);
 }
 XAudioServer.prototype.initializeResampler = function (sampleRate) {
@@ -470,22 +477,5 @@ function XAudioJSGetArraySlice(buffer, lengthOf) {
 			//Nightly Firefox 4 used to have the subarray function named as slice:
 			return buffer.slice(0, lengthOf);
 		}
-	}
-}
-//Initialize WebKit Audio:
-function initializeWebAudioContext() {
-	if (!XAudioJSWebAudioLaunchedContext) {
-		try {
-			XAudioJSWebAudioContextHandle = new webkitAudioContext();							//Create a system audio context.
-		}
-		catch (error) {
-			try {
-				XAudioJSWebAudioContextHandle = new AudioContext();								//Create a system audio context.
-			}
-			catch (error) {
-				return;
-			}
-		}
-		XAudioJSWebAudioLaunchedContext = true;
 	}
 }
