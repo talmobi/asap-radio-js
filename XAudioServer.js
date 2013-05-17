@@ -130,11 +130,11 @@ XAudioServer.prototype.executeCallback = function () {
 //DO NOT CALL THIS, the lib calls this internally!
 XAudioServer.prototype.initializeAudio = function () {
 	try {
-		this.initializeWebAudio();
+		this.initializeMozAudio();
 	}
 	catch (error) {
 		try {
-			this.initializeMozAudio();
+			this.initializeWebAudio();
 		}
 		catch (error) {
 			try {
@@ -185,21 +185,21 @@ XAudioServer.prototype.initializeMozAudio = function () {
 XAudioServer.prototype.initializeWebAudio = function () {
     if (!XAudioJSWebAudioLaunchedContext) {
         try {
-            XAudioJSWebAudioContextHandle = new webkitAudioContext();							//Create a system audio context.
+            XAudioJSWebAudioContextHandle = new AudioContext();								//Create a system audio context.
         }
         catch (error) {
-            XAudioJSWebAudioContextHandle = new AudioContext();								//Create a system audio context.
+            XAudioJSWebAudioContextHandle = new webkitAudioContext();							//Create a system audio context.
         }
         XAudioJSWebAudioLaunchedContext = true;
     }
     if (XAudioJSWebAudioAudioNode) {
-        XAudioJSWebAudioAudioNode.disconnect(0);
+        XAudioJSWebAudioAudioNode.disconnect();
     }
     try {
-        XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createJavaScriptNode(XAudioJSSamplesPerCallback, 1, XAudioJSChannelsAllocated);	//Create the js event node.
+        XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createScriptProcessor(XAudioJSSamplesPerCallback, 1, XAudioJSChannelsAllocated);	//Create the js event node.
     }
     catch (error) {
-        XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createScriptProcessor(XAudioJSSamplesPerCallback, 1, XAudioJSChannelsAllocated);	//Create the js event node.
+        XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createJavaScriptNode(XAudioJSSamplesPerCallback, 1, XAudioJSChannelsAllocated);	//Create the js event node.
     }
     XAudioJSWebAudioAudioNode.onaudioprocess = XAudioJSWebAudioEvent;																			//Connect the audio processing event to a handling function so we can manipulate output
     XAudioJSWebAudioAudioNode.connect(XAudioJSWebAudioContextHandle.destination);																//Send and chain the output of the audio manipulation to the system audio output.
