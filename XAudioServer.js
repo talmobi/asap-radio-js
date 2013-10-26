@@ -194,6 +194,8 @@ XAudioServer.prototype.initializeWebAudio = function () {
     }
     if (XAudioJSWebAudioAudioNode) {
         XAudioJSWebAudioAudioNode.disconnect();
+        XAudioJSWebAudioAudioNode.onaudioprocess = null;
+        XAudioJSWebAudioAudioNode = null;
     }
     try {
         XAudioJSWebAudioAudioNode = XAudioJSWebAudioContextHandle.createScriptProcessor(XAudioJSSamplesPerCallback, 0, XAudioJSChannelsAllocated);	//Create the js event node.
