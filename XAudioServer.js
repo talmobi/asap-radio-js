@@ -201,12 +201,12 @@ XAudioServer.prototype.initializeMozAudio = function () {
 	this.audioHandleMoz.volume = XAudioJSVolume;
 	this.samplesAlreadyWritten = 0;
 	this.audioType = 0;
-	if (navigator.platform != "MacIntel" && navigator.platform != "MacPPC") {
+	//if (navigator.platform != "MacIntel" && navigator.platform != "MacPPC") {
 		//Add some additional buffering space to workaround a moz audio api issue:
 		var bufferAmount = (this.XAudioJSSampleRate * XAudioJSChannelsAllocated / 10) | 0;
 		bufferAmount -= bufferAmount % XAudioJSChannelsAllocated;
 		this.samplesAlreadyWritten -= bufferAmount;
-	}
+	//}
     this.initializeResampler(XAudioJSMozAudioSampleRate);
 }
 XAudioServer.prototype.initializeWebAudio = function () {
