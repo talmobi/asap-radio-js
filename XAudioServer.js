@@ -129,28 +129,55 @@ XAudioServer.prototype.executeCallback = function () {
 }
 //DO NOT CALL THIS, the lib calls this internally!
 XAudioServer.prototype.initializeAudio = function () {
-	try {
-		this.initializeWebAudio();
-	}
-	catch (error) {
-		try {
-			this.initializeMozAudio();
-		}
-		catch (error) {
-			try {
-				this.initializeMediaStream();
-			}
-			catch (error) {
-				try {
-					this.initializeFlashAudio();
-				}
-				catch (error) {
-					this.audioType = -1;
-					this.failureCallback();
-				}
-			}
-		}
-	}
+    if (navigator.platform == "MacIntel" || navigator.platform == "MacPPC") {
+        //Moz Audio Data API works better on mac:
+        try {
+            this.initializeMozAudio();
+        }
+        catch (error) {
+            try {
+                this.initializeWebAudio();
+            }
+            catch (error) {
+                try {
+                    this.initializeMediaStream();
+                }
+                catch (error) {
+                    try {
+                        this.initializeFlashAudio();
+                    }
+                    catch (error) {
+                        this.audioType = -1;
+                        this.failureCallback();
+                    }
+                }
+            }
+        }
+    }
+    else {
+        try {
+            this.initializeWebAudio();
+        }
+        catch (error) {
+            try {
+                this.initializeMozAudio();
+            }
+            catch (error) {
+                try {
+                    this.initializeMediaStream();
+                }
+                catch (error) {
+                    try {
+                        this.initializeFlashAudio();
+                    }
+                    catch (error) {
+                        this.audioType = -1;
+                        this.failureCallback();
+                    }
+                }
+            }
+        }
+    }
 }
 XAudioServer.prototype.initializeMediaStream = function () {
 	this.audioHandleMediaStream = new Audio();
