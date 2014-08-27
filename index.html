@@ -1,0 +1,24 @@
+<html>
+<head>
+  <title>Sample asap-radio-js Page</title>
+
+  <style type="text/css">
+    body {
+      background-color: #222;
+    }
+  </style>
+
+  <script type="text/javascript" src="resampler.js"> </script>
+  <script type="text/javascript" src="swfobject.js"> </script>
+  <script type="text/javascript" src='XAudioServer.js'></script>
+  <script type="text/javascript" src='asap.js'></script>
+  <script type="text/javascript" src='asapweb.js'></script>
+  <script type="text/javascript" src='binaryHttpRequest.js'></script>
+</head>
+
+<body>
+  <script type="text/javascript">
+    binaryHttpRequest('Plastic_Pop.sap', asap.play);
+  </script>
+</body>
+</html>
