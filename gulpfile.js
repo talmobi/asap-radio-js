@@ -1,5 +1,10 @@
-var gulp = require('gulp');
+var gulp = require('gulp'),
+    uglify = require('gulp-uglify'),
+    concat = require('gulp-concat');
 
 gulp.task('default', function() {
-  console.log('Hello World');
+  return gulp.src('js/*.js')
+  .pipe(concat('asap-radio.js'))
+  .pipe(uglify())
+  .pipe(gulp.dest(''));
 });
