@@ -69,6 +69,7 @@ var asap = {
 		window.asap.title = info.getTitle();
 		window.asap.date = info.getDate();
 		window.asap.onLoad();
+
 		window.asap.timerId = setInterval(heartbeat, 50);
 	}
 };
