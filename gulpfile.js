@@ -4,7 +4,7 @@ var gulp = require('gulp'),
 
 gulp.task('default', function() {
   return gulp.src('js/*.js')
-  .pipe(concat('asap-radio.js'))
+  .pipe(concat('asap-radio.min.js'))
   .pipe(uglify())
   .pipe(gulp.dest(''));
 });
